@@ -1,0 +1,106 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "Provision the Talko-Lingo's Website"
+
+Parameters:
+  DomainName:
+    Type: String
+  HostedZoneId:
+    Type: String
+  Certificate:
+    Type: String
+
+Resources:
+  TalkoLingoWebsiteBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      BucketName: !Sub www.${DomainName}
+      WebsiteConfiguration:
+        IndexDocument: index.html
+
+  TalkoLingoWebsiteRedirectBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref DomainName
+      WebsiteConfiguration:
+        RedirectAllRequestsTo:
+          HostName: !Sub www.${DomainName}
+          Protocol: http
+
+  TalkoLingoWebsiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TalkoLingoWebsiteBucket
+      PolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+        - Sid: TalkoLingoWebsiteBucketPolicy
+          Effect: Allow
+          Principal: '*'
+          Action:
+          - s3:GetObject
+          Resource:
+          - !Sub arn:aws:s3:::${TalkoLingoWebsiteBucket}/*
+  #************************
+  # Put back after the tests...
+  #************************
+  #
+  # WebsiteCloudfront:
+  #     Type: AWS::CloudFront::Distribution
+  #     DependsOn:
+  #     - TalkoLingoWebsiteBucket
+  #     Properties:
+  #       DistributionConfig:
+  #         Comment: Cloudfront Distribution pointing to TalkoLingo's S3 bucket
+  #         Aliases:
+  #         - !Sub ${DomainName}
+  #         - !Sub www.${DomainName}
+  #         Origins:
+  #         - DomainName: !GetAtt TalkoLingoWebsiteBucket.DomainName
+  #           Id: S3Origin
+  #           S3OriginConfig: {}
+  #         Enabled: true
+  #         HttpVersion: 'http2'
+  #         DefaultRootObject: index.html
+  #         DefaultCacheBehavior:
+  #           AllowedMethods:
+  #           - GET
+  #           - HEAD
+  #           Compress: true
+  #           TargetOriginId: S3Origin
+  #           ForwardedValues:
+  #             QueryString: false
+  #             Cookies:
+  #               Forward: none
+  #           ViewerProtocolPolicy: redirect-to-https
+  #         PriceClass: PriceClass_100
+  #         ViewerCertificate:
+  #           AcmCertificateArn: !Sub arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/${Certificate}
+  #           SslSupportMethod: sni-only
+
+  RootDNSName:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub ${DomainName}
+      Type: A
+      AliasTarget:
+        HostedZoneId: Z2FDTNDATAQYW2
+        DNSName: !GetAtt TalkoLingoWebsiteRedirectBucket.DomainName
+
+  WebsiteDNSName:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub www.${DomainName}
+      Type: CNAME
+      TTL: "300"
+      ResourceRecords:
+        - !GetAtt TalkoLingoWebsiteBucket.DomainName
+
+Outputs:
+  Bucket:
+    Value: !Ref TalkoLingoWebsiteBucket
+    Export:
+      Name: TalkoLingo-Bucket
