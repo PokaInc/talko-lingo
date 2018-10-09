@@ -3,13 +3,13 @@ A demonstration project for the re:Invent Builder's Fair
 
 ## Abstract
 
-### Talko-Lingo: The multilingual Talkie-Walkie
+### Talko-Lingo: The multilingual Walkie Talkie
 
-Talko-Lingo is a simple demonstration project that leverages several AWS
-technologies to enable multilingual communications. It presents itself as a
-modern cloud-powered "Walkie-Talkie" that can translate communications as they 
-happen. Based on a simple Raspberry Pi, this open-source project will introduce
-attendees to how AWS cloud technologies can be used to bring life to Internet of
-Things projects, with a touch of 3D printing and electronics design. Attendees
-will also be able to try it by themselves and test the technology, with visual
-feedback and additional informations regarding the whole translation process.
+Talko-Lingo enables near real-time communication between two people of the same
+or different languages. Users interface with a Walkie Talkie consisting of a
+Raspberry Pi embedded into a 3D printed device. After selecting their language,
+each user can seamlessly communicate with the recipient, who may be speaking a
+different language. The project leverages AWS cloud technologies to encode each
+user's voice, transcribe it, translate it to the target language and then
+finally convert the translated text to speech. Built-in display mechanisms
+provide visual feedback of the translation process.
