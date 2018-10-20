@@ -25,8 +25,9 @@ def on_new_recording(recording):
 
 
 with PhysicalInterface as physical_interface:
+    print('=== {} READY ==='.format(physical_interface.__class__.__name__))
     with AudioRecorder(RECORDING_DEVICE_NAME, on_new_recording) as audio_recorder:
-        print('=== TX READY ===')
+        print('=== {} READY ==='.format(audio_recorder.__class__.__name__))
         try:
             while True:
                 audio_recorder.tick(physical_interface.is_push_to_talk_button_pressed())
