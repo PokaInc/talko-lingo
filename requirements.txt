@@ -1,0 +1,4 @@
+boto3==1.9.28
+numpy==1.15.2
+SoundFile==0.10.2
+PyAudio==0.2.11
