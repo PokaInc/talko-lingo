@@ -1,4 +1,5 @@
 import os
+import socket
 
 import boto3
 
@@ -14,11 +15,18 @@ bucket = s3_resource.Bucket(BUCKET_NAME)
 
 
 def on_new_recording(recording):
-    bucket.upload_file(recording.filename, 'input/' + os.path.basename(recording.filename))
+    local_path = recording.filename
+    s3_path = 'input/{hostname}/{filename}'.format(
+        hostname=socket.gethostname(),
+        filename=os.path.basename(recording.filename)
+    )
+    bucket.upload_file(local_path, s3_path)
+    print('File successfully uploaded: ' + s3_path)
 
 
 with PhysicalInterface as physical_interface:
     with AudioRecorder(RECORDING_DEVICE_NAME, on_new_recording) as audio_recorder:
+        print('=== TX READY ===')
         try:
             while True:
                 audio_recorder.tick(physical_interface.is_push_to_talk_button_pressed())

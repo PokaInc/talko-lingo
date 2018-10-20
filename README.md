@@ -13,3 +13,17 @@ different language. The project leverages AWS cloud technologies to encode each
 user's voice, transcribe it, translate it to the target language and then
 finally convert the translated text to speech. Built-in display mechanisms
 provide visual feedback of the translation process.
+
+
+### Local macOS development
+
+#### Installation
+```
+xcode-select --install
+brew install portaudio
+pip install -r requirements.txt
+pip install -r requirements_dev.txt
+
+export RECORDING_DEVICE_NAME='Built-in Microphone'
+export TALKO_LINGO_BUCKET=talkolingo-transcribe-talkolingowebsitebucket-12ma3icabs3n6
+```
