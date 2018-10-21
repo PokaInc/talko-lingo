@@ -7,13 +7,13 @@ from recording import Recording
 
 
 class AudioRecorder:
-    def __init__(self, recording_device_name, completion_callback):
+    def __init__(self, recording_device_name):
         self.audio = pyaudio.PyAudio()
         self.device_index = self._get_recording_device_index(recording_device_name)
         self._current_recording = None
         self._recordings = []
-        self._completion_callback = completion_callback
         self._audio_files_temp_dir = tempfile.mkdtemp()
+        self.completion_callback = lambda *args: None
 
     def __enter__(self):
         return self
@@ -37,7 +37,7 @@ class AudioRecorder:
         else:
             if self._current_recording:
                 self._current_recording.complete()
-                self._completion_callback(self._current_recording)
+                self.completion_callback(self._current_recording)
                 self._current_recording = None
 
     def __exit__(self, _, __, ___):
