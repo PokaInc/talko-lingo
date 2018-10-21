@@ -23,7 +23,8 @@ class GPIOPhysicalInterface(AbstractPhysicalInterface):
     def is_push_to_talk_button_pressed(self):
         return not self.gpio.input(self.talk_button_pin_number)
 
-    def get_language_code(self):
+    @property
+    def language_code(self):
         selected_pin = 0
         for switch_pin in self.languages.keys():
             input_state = GPIO.input(switch_pin)
@@ -50,7 +51,8 @@ class KeyboardPhysicalInterface(AbstractPhysicalInterface):
     def is_push_to_talk_button_pressed(self):
         return self._shift_key_pressed
 
-    def get_language_code(self):
+    @property
+    def language_code(self):
         return self._current_language_code
 
     def _on_press(self, key):
