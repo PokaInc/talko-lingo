@@ -20,10 +20,25 @@ class TerminalDisplay(AbstractDisplay):
         self.print_function(message[:2] + ' ' + message[2:])
 
 
+class LedDisplay(AbstractDisplay):
+
+    def __init__(self):
+        AbstractDisplay.__init__(self)
+        from Adafruit_LED_Backpack import AlphaNum4
+        self.alphanum_display = AlphaNum4.AlphaNum4()
+        self.alphanum_display.begin()
+
+    def show(self, message):
+        assert len(message) == 4
+        self.alphanum_display.clear()
+        self.alphanum_display.print_str(message)
+        self.alphanum_display.write_display()
+
+
 try:
     from Adafruit_LED_Backpack import AlphaNum4
 
-    Display = None
+    Display = LedDisplay
 except ImportError:
     Display = TerminalDisplay
 

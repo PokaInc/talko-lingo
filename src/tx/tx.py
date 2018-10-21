@@ -1,5 +1,6 @@
 import os
 import socket
+from time import sleep
 
 import boto3
 
@@ -32,7 +33,7 @@ def on_new_recording(recording):
 def on_language_change(language_code):
     global current_language_code
     current_language_code = language_code
-    display.show(language_code + '  ')
+    display.show(' {} '.format(language_code))
 
 
 with PhysicalInterface as physical_interface:
@@ -43,7 +44,9 @@ with PhysicalInterface as physical_interface:
         print('=== {} READY ==='.format(audio_recorder.__class__.__name__))
         try:
             while True:
-                audio_recorder.tick(physical_interface.is_push_to_talk_button_pressed())
+                physical_interface.tick()
+                audio_recorder.tick(physical_interface.is_push_to_talk_button_pressed)
+                sleep(0.05)
         except KeyboardInterrupt:
             pass
 
