@@ -19,6 +19,7 @@ class GPIOPhysicalInterface(AbstractPhysicalInterface):
         self.gpio = gpio
         self.languages = languages
         self.talk_button_pin_number = talk_button_pin_number
+        self.on_language_change = lambda *args : None
 
     def is_push_to_talk_button_pressed(self):
         return not self.gpio.input(self.talk_button_pin_number)
@@ -29,7 +30,10 @@ class GPIOPhysicalInterface(AbstractPhysicalInterface):
         for switch_pin in self.languages.keys():
             input_state = GPIO.input(switch_pin)
             selected_pin = selected_pin if input_state else switch_pin
-        return self.languages.get(selected_pin, "XX")
+
+        new_language = self.languages.get(selected_pin, "XX")
+        self.on_language_change(new_language)
+        return new_language
 
 
 class KeyboardPhysicalInterface(AbstractPhysicalInterface):
@@ -37,9 +41,11 @@ class KeyboardPhysicalInterface(AbstractPhysicalInterface):
         AbstractPhysicalInterface.__init__(self)
         self.languages = languages_dev
         self._shift_key_pressed = False
-        self._current_language_code = 1
+        self._current_language_code = 0
+        self._current_language = "EN"
         self._listener = listener(on_press=self._on_press, on_release=self._on_release)
         self._key_module = key_module
+        self.on_language_change = lambda *args : None
 
     def __enter__(self):
         self._listener.__enter__()
@@ -60,7 +66,10 @@ class KeyboardPhysicalInterface(AbstractPhysicalInterface):
             self._shift_key_pressed = True
         elif key == self._key_module.ctrl:
             new_language_code = (self._current_language_code + 1) % 8
+            new_language = self.languages.get(new_language_code, "XX")
+            self.on_language_change(new_language)
             self._current_language_code = new_language_code
+            self._current_language = new_language
 
     def _on_release(self, key):
         if key == self._key_module.shift:
