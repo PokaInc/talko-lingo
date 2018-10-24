@@ -6,10 +6,13 @@ Resources:
   AudioFileStore:
     Type: AWS::S3::Bucket
     DeletionPolicy: Delete
+
+  SNSTopic:
+    Type: AWS::SNS::Topic
     Properties:
-      NotificationConfiguration:
-        LambdaConfigurations:
-        - !Ref AWS::NoValue        #Entrypoint to AWS Transcribe Step Functions
+      Subscription:
+      - Endpoint: !GetAtt LocalLambdas.Outputs.TxLambdaArn
+        Protocol: lambda
 
   LocalLambdas:
     Type: AWS::CloudFormation::Stack
