@@ -6,6 +6,10 @@ Resources:
   AudioFileStore:
     Type: AWS::S3::Bucket
     DeletionPolicy: Delete
+    NotificationConfiguration:
+      TopicConfigurations:
+      - Event: s3:ObjectCreated:*
+        Topic: !Ref SNSTopic
 
   SNSTopic:
     Type: AWS::SNS::Topic
