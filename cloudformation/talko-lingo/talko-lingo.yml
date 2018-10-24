@@ -44,6 +44,9 @@ Resources:
       Code: ../../src/cloud/
       Runtime: python3.6
       Timeout: '300'
+      Environment:
+        Variables:
+          STATUS_TOPIC_ARN: !Ref StatusTopic
 
   S3EventHandlerLambdaRole:
     Type: AWS::IAM::Role
@@ -90,6 +93,14 @@ Resources:
             Action:
             - iot:Publish
             Resource: !Sub "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/talko/rx"
+      - PolicyName: SNSPublish
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - SNS:Publish
+            Resource: !Ref StatusTopic
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
@@ -114,6 +125,9 @@ Resources:
       FunctionName: !GetAtt S3EventHandlerLambda.Arn
       Action: lambda:InvokeFunction
       Principal: sns.amazonaws.com
+
+  StatusTopic:
+    Type: AWS::SNS::Topic
 
   LocalLambdas:
     Type: AWS::CloudFormation::Stack

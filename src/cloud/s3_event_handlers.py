@@ -1,8 +1,8 @@
+import json
 import os
+import uuid
 
 import boto3
-import json
-from hashlib import md5
 
 
 def lambda_handler(event, _):
@@ -26,8 +26,9 @@ def lambda_handler(event, _):
 
 def handle_new_audio_file(bucketname, key):
     transcribe_client = boto3.client('transcribe')
+    publish_message('Transcribing')
     response = transcribe_client.start_transcription_job(
-        TranscriptionJobName=md5(key.encode('utf-8')).hexdigest(),
+        TranscriptionJobName=str(uuid.uuid4()),
         LanguageCode='en-US',
         MediaFormat=os.path.splitext(key)[1][1:],
         Media={
@@ -50,6 +51,7 @@ def build_presigned_url(s3_client, bucketname, key):
 
 
 def handle_polly_generated_file(s3_client, bucketname, key):
+    publish_message('Publishing')
     iot_client = boto3.client('iot-data')
     print(iot_client.publish(
         topic='talko/rx',
@@ -60,6 +62,7 @@ def handle_polly_generated_file(s3_client, bucketname, key):
 
 
 def handle_new_transcription_result(s3_client, bucketname, key):
+    publish_message('Translating')
     content = json.loads(s3_client.get_object(Bucket=bucketname, Key=key)['Body'].read())
     translate_client = boto3.client('translate')
     translated_text = translate_client.translate_text(
@@ -72,6 +75,7 @@ def handle_new_transcription_result(s3_client, bucketname, key):
 
 
 def create_polly_job(text, bucketname):
+    publish_message('Pollying')
     polly_client = boto3.client('polly')
     print(polly_client.start_speech_synthesis_task(
         OutputFormat='mp3',
@@ -80,4 +84,12 @@ def create_polly_job(text, bucketname):
         Text=text,
         VoiceId='Chantal',
         LanguageCode='fr-CA'
+    ))
+
+
+def publish_message(msg):
+    sns = boto3.resource('sns')
+    topic = sns.Topic(os.environ['STATUS_TOPIC_ARN'])
+    print(topic.publish(
+        Message=msg,
     ))
