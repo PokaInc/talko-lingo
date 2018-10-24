@@ -16,8 +16,8 @@ popd
 
 # Finally let's bundle this
 pushd ${TEMP_DIR}
-zip -r talko_lingo_greengrass_lambdas.zip ./*
+zip -r local_lambdas.zip ./*
 popd
 
 # Copy the tmp file back to the dist directory so it can be uploaded
-cp ${TEMP_DIR}/talko_lingo_greengrass_lambdas.zip dist/
+cp ${TEMP_DIR}/local_lambdas.zip dist/

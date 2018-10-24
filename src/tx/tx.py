@@ -9,7 +9,7 @@ from physical_inputs import PhysicalInterface
 from shared.display import Display
 
 RECORDING_DEVICE_NAME = os.environ['RECORDING_DEVICE_NAME']
-BUCKET_NAME = os.environ['TALKO_LINGO_BUCKET']
+BUCKET_NAME = os.environ['AUDIO_FILE_STORE']
 current_language_code = 'en'
 
 s3_resource = boto3.resource('s3')

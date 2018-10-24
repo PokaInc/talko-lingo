@@ -1,0 +1,26 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "Provision the Talko-Lingo's service"
+
+Resources:
+  AudioFileStore:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      NotificationConfiguration:
+        LambdaConfigurations:
+        - !Ref AWS::NoValue        #Entrypoint to AWS Transcribe Step Functions
+
+  LocalLambdas:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: local-lambdas.yml
+      Parameters:
+        AudioFileStore: !Ref AudioFileStore
+
+Outputs:
+  RxLambda:
+    Value: !GetAtt LocalLambdas.Outputs.RxLambda
+
+  TxLambda:
+    Value: !GetAtt LocalLambdas.Outputs.TxLambda
