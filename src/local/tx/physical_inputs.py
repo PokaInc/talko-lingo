@@ -6,9 +6,7 @@ LANGUAGES = {
     12: "ES",
     13: "DE",
     16: "RU",
-    19: "CN",
     20: "TR",
-    21: "AR",
 }
 
 DEV_LANGUAGES = {
