@@ -5,18 +5,36 @@ Description: "Provision the Talko-Lingo's service"
 Resources:
   AudioFileStore:
     Type: AWS::S3::Bucket
-    DeletionPolicy: Delete
-    NotificationConfiguration:
-      TopicConfigurations:
-      - Event: s3:ObjectCreated:*
-        Topic: !Ref SNSTopic
+    Properties:
+      NotificationConfiguration:
+        TopicConfigurations:
+        - Event: s3:ObjectCreated:*
+          Topic: !Ref SNSTopic
 
   SNSTopic:
     Type: AWS::SNS::Topic
     Properties:
-      Subscription:
-      - Endpoint: !GetAtt LocalLambdas.Outputs.TxLambdaArn
-        Protocol: lambda
+      Subscription: []
+      # - Endpoint: !GetAtt AsgToRoute53Lambda.Arn
+      #   Protocol: lambda
+
+  TopicPolicy:
+    Type: "AWS::SNS::TopicPolicy"
+    Properties:
+      Topics:
+      - !Ref SNSTopic
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: s3.amazonaws.com
+          Action:
+          - SNS:Publish
+          Resource: !Ref SNSTopic
+          Condition:
+            StringEquals:
+              aws:SourceAccount: !Sub '${AWS::AccountId}'
 
   LocalLambdas:
     Type: AWS::CloudFormation::Stack
