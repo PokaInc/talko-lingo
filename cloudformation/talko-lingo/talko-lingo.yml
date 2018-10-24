@@ -66,6 +66,30 @@ Resources:
             Action:
             - transcribe:StartTranscriptionJob
             Resource: "*"
+      - PolicyName: TranslateText
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - translate:TranslateText
+            Resource: "*"
+      - PolicyName: StartSpeechSynthesisTaskInPolly
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - polly:StartSpeechSynthesisTask
+            Resource: "*"
+      - PolicyName: IotPublish
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - iot:Publish
+            Resource: !Sub "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/talko/rx"
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 

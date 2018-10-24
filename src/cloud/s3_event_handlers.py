@@ -62,12 +62,13 @@ def handle_polly_generated_file(s3_client, bucketname, key):
 def handle_new_transcription_result(s3_client, bucketname, key):
     content = json.loads(s3_client.get_object(Bucket=bucketname, Key=key)['Body'].read())
     translate_client = boto3.client('translate')
-    translation_result = translate_client.translate_text(
+    translated_text = translate_client.translate_text(
         Text=content['results']['transcripts'][0]['transcript'],
         SourceLanguageCode='en',
         TargetLanguageCode='fr'
-    )
-    create_polly_job(translation_result['TranslatedText'], bucketname)
+    )['TranslatedText']
+    print('Translated text: ' + translated_text)
+    create_polly_job(translated_text, bucketname)
 
 
 def create_polly_job(text, bucketname):
