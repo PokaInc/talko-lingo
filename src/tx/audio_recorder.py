@@ -25,7 +25,7 @@ class AudioRecorder:
         raise RuntimeError('Unable to find device named: ' + recording_device_name)
 
     def _create_recording_file_name(self):
-        return os.path.join(self._audio_files_temp_dir, 'input-{}.ogg'.format(len(self._recordings)))
+        return os.path.join(self._audio_files_temp_dir, 'input-{}.flac'.format(len(self._recordings)))
 
     def tick(self, button_pressed):
         if button_pressed:
