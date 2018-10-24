@@ -9,20 +9,20 @@ Resources:
       NotificationConfiguration:
         TopicConfigurations:
         - Event: s3:ObjectCreated:*
-          Topic: !Ref SNSTopic
+          Topic: !Ref AudioFileStoreEventTopic
 
-  SNSTopic:
+  AudioFileStoreEventTopic:
     Type: AWS::SNS::Topic
     Properties:
-      Subscription: []
-      # - Endpoint: !GetAtt AsgToRoute53Lambda.Arn
-      #   Protocol: lambda
+      Subscription:
+      - Endpoint: !GetAtt S3EventHandlerLambda.Arn
+        Protocol: lambda
 
   TopicPolicy:
-    Type: "AWS::SNS::TopicPolicy"
+    Type: AWS::SNS::TopicPolicy
     Properties:
       Topics:
-      - !Ref SNSTopic
+      - !Ref AudioFileStoreEventTopic
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -31,10 +31,65 @@ Resources:
             Service: s3.amazonaws.com
           Action:
           - SNS:Publish
-          Resource: !Ref SNSTopic
+          Resource: !Ref AudioFileStoreEventTopic
           Condition:
             StringEquals:
               aws:SourceAccount: !Sub '${AWS::AccountId}'
+
+  S3EventHandlerLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: s3_event_handlers.lambda_handler
+      Role: !GetAtt S3EventHandlerLambdaRole.Arn
+      Code: ../../src/cloud/
+      Runtime: python3.6
+      Timeout: '300'
+
+  S3EventHandlerLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: ''
+          Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Path: /
+      Policies:
+      - PolicyName: StartTranscriptionJob
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - transcribe:StartTranscriptionJob
+            Resource: "*"
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  S3EventHandlerAccessAudioFileStorePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: AccessAudioFileStore
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:GetObject
+          - s3:PutObject
+          Resource: !Sub "${AudioFileStore.Arn}/*"
+      Roles:
+      - !Ref S3EventHandlerLambdaRole
+
+  S3EventHandlerInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt S3EventHandlerLambda.Arn
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
 
   LocalLambdas:
     Type: AWS::CloudFormation::Stack

@@ -6,7 +6,7 @@ set -e
 TEMP_DIR=`mktemp -d`
 
 # Add the actual code
-pushd src
+pushd src/local
 rsync -a --include '*/' --include '*.py' --exclude '*' . ${TEMP_DIR}
 popd
 # Copy the Greengrass SDK
