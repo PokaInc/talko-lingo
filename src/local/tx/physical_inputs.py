@@ -22,7 +22,7 @@ DEV_LANGUAGES = {
     7: "AR",
 }
 
-PUSH_TO_TALK_PIN_NUMBER = 18
+PUSH_TO_TALK_PIN_NUMBER = 17
 
 
 class AbstractPhysicalInterface:
