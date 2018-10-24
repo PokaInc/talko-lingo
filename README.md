@@ -25,5 +25,5 @@ pip install -r requirements.txt
 pip install -r requirements_dev.txt
 
 export RECORDING_DEVICE_NAME='Built-in Microphone'
-export TALKO_LINGO_BUCKET=talkolingo-transcribe-talkolingowebsitebucket-12ma3icabs3n6
+export AUDIO_FILE_STORE=talkolingo-transcribe-talkolingowebsitebucket-12ma3icabs3n6
 ```
