@@ -17,7 +17,13 @@ __check_defined = \
 check-bucket:
 	@aws s3api head-bucket --bucket $(BUCKET_NAME) &> /dev/null || aws s3 mb s3://$(BUCKET_NAME)
 
-package-talko-lingo: check-bucket
+download_transcribe_preview_jar:
+	aws s3 sync s3://talko-lingo-jars src/cloud/english_transcribe_function/jars/
+
+build_english_transcribe_function: download_transcribe_preview_jar
+	cd src/cloud/english_transcribe_function; ./gradlew build
+
+package-talko-lingo: check-bucket build_english_transcribe_function
 	@./package_local_lambdas.sh
 	@aws cloudformation package --template-file $(TALKO_LINGO_SOURCE_TEMPLATE_PATH) --s3-bucket $(BUCKET_NAME) --s3-prefix cloudformation/talkolingo --output-template-file $(GENERATED_TALKO_LINGO_TEMPLATE_ABSOLUTE_PATH)
 

@@ -1,6 +1,8 @@
 # OSX Files
 .DS_Store
 
+*.pyc
+
 dist/**
 
 # Allow .gitkeep for folder structure

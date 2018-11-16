@@ -1,0 +1,38 @@
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+dependencies {
+    compile fileTree(dir: 'jars', include: '*.jar')
+    compile (
+        'com.amazonaws:aws-lambda-java-core:1.1.0',
+        'com.amazonaws:aws-lambda-java-events:1.1.0',
+        'com.amazonaws:aws-lambda-java-log4j:1.0.0',
+        'com.fasterxml.jackson.core:jackson-core:2.8.5',
+        'com.fasterxml.jackson.core:jackson-databind:2.8.5',
+        'com.fasterxml.jackson.core:jackson-annotations:2.8.5'
+    )
+    // https://mvnrepository.com/artifact/io.reactivex.rxjava2/rxjava
+    compile group: 'io.reactivex.rxjava2', name: 'rxjava', version: '2.2.2'
+}
+
+// Task for building the zip file for upload
+task buildZip(type: Zip) {
+    baseName = "english_transcribe_function"
+    from compileJava
+    from processResources
+    into('lib') {
+        from configurations.runtime
+    }
+}
+
+build.dependsOn buildZip
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '3.5'
+}

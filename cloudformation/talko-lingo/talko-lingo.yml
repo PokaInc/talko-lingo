@@ -41,12 +41,14 @@ Resources:
     Properties:
       Handler: s3_event_handlers.lambda_handler
       Role: !GetAtt S3EventHandlerLambdaRole.Arn
-      Code: ../../src/cloud/
+      Code: ../../src/cloud/s3_event_handlers/
       Runtime: python3.6
       Timeout: '300'
       Environment:
         Variables:
           STATUS_TOPIC_ARN: !Ref StatusTopic
+          JOBS_TABLE_NAME: !Ref JobsTable
+          ENGLISH_TRANSCRIBE_STREAMING_LAMBDA_FUNCTION_NAME: "EnglishTranscribeLambdaFunction"
 
   S3EventHandlerLambdaRole:
     Type: AWS::IAM::Role
@@ -61,13 +63,14 @@ Resources:
           Action: sts:AssumeRole
       Path: /
       Policies:
-      - PolicyName: StartTranscriptionJob
+      - PolicyName: Transcribe
         PolicyDocument:
           Version: "2012-10-17"
           Statement:
           - Effect: Allow
             Action:
             - transcribe:StartTranscriptionJob
+            - transcribe:GetTranscriptionJob
             Resource: "*"
       - PolicyName: TranslateText
         PolicyDocument:
@@ -101,6 +104,29 @@ Resources:
             Action:
             - SNS:Publish
             Resource: !Ref StatusTopic
+      - PolicyName: JobsTable
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - dynamodb:*
+            Resource: !GetAtt JobsTable.Arn
+      - PolicyName: IoT
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - iot:Publish
+            Resource: "*"
+      - PolicyName: LambdaAccess
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - lambda:InvokeFunction
+            Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:EnglishTranscribeLambdaFunction
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
@@ -135,6 +161,172 @@ Resources:
       TemplateURL: local-lambdas.yml
       Parameters:
         AudioFileStore: !Ref AudioFileStore
+
+  JobsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: InputKey
+        AttributeType: S
+      KeySchema:
+      - AttributeName: InputKey
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+  TranscribeRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "EventRule"
+      EventPattern:
+        source:
+        - "aws.transcribe"
+        detail-type:
+        - "Transcribe Job State Change"
+        detail:
+          TranscriptionJobStatus:
+          - "IN_PROGRESS"
+          - "COMPLETED"
+          - "FAILED"
+      State: "ENABLED"
+      Targets:
+      - Arn: !GetAtt S3EventHandlerLambda.Arn
+        Id: "TargetFunctionV1"
+
+  PermissionForEventsToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref S3EventHandlerLambda
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt TranscribeRule.Arn
+
+  EnglishTranscribeLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: ''
+          Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  TranscribeStreamingUser:
+    Type: AWS::IAM::User
+    Properties:
+      Policies:
+      - PolicyName: Transcribe
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - transcribe:StartStreamTranscription
+            Resource: "*"
+      - PolicyName: S3Access
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:GetObject
+            Resource: !Sub "${AudioFileStore.Arn}/*"
+
+  TranscribeStreamingAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      Serial: 0
+      UserName: !Ref TranscribeStreamingUser
+
+  EnglishTranscribeLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: "EnglishTranscribeLambdaFunction"  # Necessary to break circular dependency
+      Handler: com.english_transcribe_function.Handler::lambdaHandler
+      Role: !GetAtt EnglishTranscribeLambdaRole.Arn
+      Code: ../../src/cloud/english_transcribe_function/build/distributions/english_transcribe_function.zip
+      Runtime: java8
+      Timeout: '300'
+      MemorySize: 1024
+      Environment:
+        Variables:
+          OVERRIDE_AWS_ACCESS_KEY_ID: !Ref TranscribeStreamingAccessKey
+          OVERRIDE_AWS_SECRET_ACCESS_KEY: !GetAtt TranscribeStreamingAccessKey.SecretAccessKey
+
+  DeviceConfigTopicRule:
+    Type: AWS::IoT::TopicRule
+    Properties:
+      TopicRulePayload:
+        RuleDisabled: false
+        Sql: >-
+          Select * FROM 'config-topic'
+        Actions:
+        - Lambda:
+            FunctionArn: !GetAtt DeviceConfigLambdaFunction.Arn
+
+  DeviceConfigLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: device_config_lambda.lambda_handler
+      Role: !GetAtt DeviceConfigLambdaRole.Arn
+      Code: ../../src/cloud/device_config_lambda/
+      Runtime: python3.6
+      Timeout: '300'
+      Environment:
+        Variables:
+          DEVICE_CONFIG_TABLE_NAME: !Ref DeviceConfigTable
+
+  DeviceConfigLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: ''
+          Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+      - PolicyName: DynamoPolicy
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - dynamodb:PutItem
+            Resource: !GetAtt DeviceConfigTable.Arn
+
+  DeviceConfigLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt DeviceConfigLambdaFunction.Arn
+      Principal: iot.amazonaws.com
+      SourceArn: !GetAtt DeviceConfigTopicRule.Arn
+      SourceAccount: !Ref AWS::AccountId
+
+  DeviceConfigTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: DeviceId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: DeviceId
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
 
 Outputs:
   RxLambda:
