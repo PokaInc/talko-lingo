@@ -5,5 +5,8 @@
 
 dist/**
 
+node_modules
+src/web_ui/dist/**
+
 # Allow .gitkeep for folder structure
 !.gitkeep

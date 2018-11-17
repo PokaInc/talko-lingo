@@ -6,6 +6,9 @@ GENERATED_TALKO_LINGO_TEMPLATE_ABSOLUTE_PATH = $(shell pwd)/dist/$(TALKO_LINGO_S
 
 BUCKET_NAME=talko-lingo-`aws sts get-caller-identity --output text --query 'Account'`-$${AWS_DEFAULT_REGION:-`aws configure get region`}
 
+AWS_REGION=$(shell aws configure get region)
+WEB_UI_BUCKET_NAME=$(shell aws cloudformation describe-stacks --stack-name TalkoLingo --query "Stacks[0].Outputs[?OutputKey=='WebsiteBucketName'].OutputValue" --output text --region $(AWS_REGION))
+
 # Check if variable has been defined, otherwise print custom error message
 check_defined = \
 	$(strip $(foreach 1,$1, \
@@ -13,6 +16,16 @@ check_defined = \
 __check_defined = \
 	$(if $(value $1),, \
 		$(error Undefined $1$(if $2, ($2))))
+
+build-web-ui:
+	cd src/web_ui; npm install
+	cd src/web_ui/node_modules/aws-iot-device-sdk; npm run-script browserize
+	rsync --update src/web_ui/index.js src/web_ui/dist/
+	rsync --update src/web_ui/index.html src/web_ui/dist/
+	rsync --update src/web_ui/node_modules/aws-iot-device-sdk/browser/aws-iot-sdk-browser-bundle.js src/web_ui/dist/
+
+deploy-web-ui: build-web-ui
+	aws s3 sync src/web_ui/dist s3://$(WEB_UI_BUCKET_NAME)
 
 check-bucket:
 	@aws s3api head-bucket --bucket $(BUCKET_NAME) &> /dev/null || aws s3 mb s3://$(BUCKET_NAME)

@@ -297,9 +297,36 @@ Resources:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
 
+  WebUiBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: index.html
+
+  WeuUiBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebUiBucket
+      PolicyDocument:
+        Id: MyPolicy
+        Version: 2012-10-17
+        Statement:
+        - Sid: PublicReadForGetBucketObjects
+          Effect: Allow
+          Principal: "*"
+          Action: s3:GetObject
+          Resource: !Sub 'arn:aws:s3:::${WebUiBucket}/*'
+
 Outputs:
   RxLambda:
     Value: !GetAtt LocalLambdas.Outputs.RxLambda
 
   TxLambda:
     Value: !GetAtt LocalLambdas.Outputs.TxLambda
+
+  WebsiteURL:
+    Value: !GetAtt WebUiBucket.WebsiteURL
+
+  WebsiteBucketName:
+    Value: !Ref WebUiBucket
