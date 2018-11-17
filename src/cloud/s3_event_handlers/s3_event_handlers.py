@@ -23,17 +23,18 @@ def lambda_handler(event, _):
                 if key.startswith('input/'):
                     handle_new_audio_file(bucketname, key)
                 if key.startswith('output/'):
-                    handle_polly_generated_file(s3_client, bucketname, key)
+                    job_id = key.partition('output/')[2].partition('/')[0]
+                    handle_polly_generated_file(s3_client, bucketname, key, job_id=job_id)
 
 
 def handle_new_audio_file(bucketname, key):
-    # dynamodb = boto3.resource('dynamodb')
-    # table = dynamodb.Table(os.environ['JOBS_TABLE_NAME'])
+    job_id = str(uuid.uuid4())
 
     input_language = 'en-US'  # todo: dynamically get input language
 
     if input_language == 'en-US':
         lambda_client = boto3.client('lambda')
+        publish_status('Transcribing', job_id=job_id)
         response = lambda_client.invoke(
             FunctionName=os.environ['ENGLISH_TRANSCRIBE_STREAMING_LAMBDA_FUNCTION_NAME'],
             InvocationType='RequestResponse',
@@ -44,26 +45,21 @@ def handle_new_audio_file(bucketname, key):
         )
 
         text_to_translate = response['Payload'].read().decode('utf-8')
-        translate(text_to_translate, bucketname)
+        print(text_to_translate)
+        translate(text_to_translate, bucketname, job_id=job_id)
     else:
         transcribe_client = boto3.client('transcribe')
-        publish_message('Transcribing')
+        publish_status('Transcribing', job_id=job_id)
         response = transcribe_client.start_transcription_job(
-            TranscriptionJobName=str(uuid.uuid4()),
+            TranscriptionJobName=job_id,
             LanguageCode=input_language,
             MediaFormat=os.path.splitext(key)[1][1:],
             Media={
-                'MediaFileUri': f'https://s3.amazonaws.com/{bucketname}/{key}'
+                'MediaFileUri': 'https://s3.amazonaws.com/{}/{}'.format(bucketname, key)
             },
             OutputBucketName=bucketname
         )
         print(response)
-    # table.put_item(
-    #     Item={
-    #         'InputKey': key,
-    #         'TranscribeResponse': json.dumps(response),
-    #     }
-    # )
 
 
 def build_presigned_url(s3_client, bucketname, key):
@@ -77,8 +73,8 @@ def build_presigned_url(s3_client, bucketname, key):
     )
 
 
-def handle_polly_generated_file(s3_client, bucketname, key):
-    publish_message('Publishing')
+def handle_polly_generated_file(s3_client, bucketname, key, job_id):
+    publish_status('Publishing', job_id=job_id)
     iot_client = boto3.client('iot-data')
     print(iot_client.publish(
         topic='talko/rx',
@@ -93,11 +89,10 @@ def handle_transcribe_event(event):
     if detail['TranscriptionJobStatus'] != 'COMPLETED':
         return
 
-    publish_message('Translating')
-    transcription_job_name = detail['TranscriptionJobName']
+    job_id = detail['TranscriptionJobName']
     transcribe = boto3.client('transcribe')
     response = transcribe.get_transcription_job(
-        TranscriptionJobName=transcription_job_name
+        TranscriptionJobName=job_id
     )
     print('transcription job:', response)
     transcript_file_uri = response['TranscriptionJob']['Transcript']['TranscriptFileUri']
@@ -110,10 +105,11 @@ def handle_transcribe_event(event):
 
     content = json.loads(boto3.client('s3').get_object(Bucket=bucketname, Key=key)['Body'].read())
     text_to_translate = content['results']['transcripts'][0]['transcript']
-    translate(text_to_translate, bucketname)
+    translate(text_to_translate, bucketname, job_id=job_id)
 
 
-def translate(text_to_translate, destination_bucket_namt):
+def translate(text_to_translate, destination_bucket_name, job_id):
+    publish_status('Translating', job_id=job_id)
     translate_client = boto3.client('translate')
     translated_text = translate_client.translate_text(
         Text=text_to_translate,
@@ -121,27 +117,25 @@ def translate(text_to_translate, destination_bucket_namt):
         TargetLanguageCode='fr'
     )['TranslatedText']
     print('Translated text: ' + translated_text)
-    create_polly_job(translated_text, destination_bucket_namt)
+    create_polly_job(translated_text, destination_bucket_name, job_id=job_id)
 
 
-def create_polly_job(text, bucketname):
-    publish_message('Pollying')
+def create_polly_job(text, bucketname, job_id):
+    publish_status('Pollying', job_id=job_id)
     polly_client = boto3.client('polly')
     print(polly_client.start_speech_synthesis_task(
         OutputFormat='mp3',
         OutputS3BucketName=bucketname,
-        OutputS3KeyPrefix='output/',
+        OutputS3KeyPrefix='output/{}/'.format(job_id),
         Text=text,
         VoiceId='Chantal',
         LanguageCode='fr-CA'
     ))
 
 
-def publish_message(msg):
-    # sns = boto3.resource('sns')
-    # topic = sns.Topic(os.environ['STATUS_TOPIC_ARN'])
-    # print(topic.publish(
-    #     Message=msg,
-    # ))
+def publish_status(status, job_id):
     iot = boto3.client('iot-data')
-    iot.publish(topic='bleh', payload=msg)
+    iot.publish(topic='job_status', payload=json.dumps({
+        'JobId': job_id,
+        'Status': status,
+    }))
