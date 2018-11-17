@@ -30,9 +30,9 @@ def handle_new_audio_file(bucketname, key):
     # dynamodb = boto3.resource('dynamodb')
     # table = dynamodb.Table(os.environ['JOBS_TABLE_NAME'])
 
-    input_language = 'en'  # todo: dynamically get input language
+    input_language = 'en-US'  # todo: dynamically get input language
 
-    if input_language == 'en':
+    if input_language == 'en-US':
         lambda_client = boto3.client('lambda')
         response = lambda_client.invoke(
             FunctionName=os.environ['ENGLISH_TRANSCRIBE_STREAMING_LAMBDA_FUNCTION_NAME'],
