@@ -49,6 +49,7 @@ Resources:
           STATUS_TOPIC_ARN: !Ref StatusTopic
           JOBS_TABLE_NAME: !Ref JobsTable
           ENGLISH_TRANSCRIBE_STREAMING_LAMBDA_FUNCTION_NAME: "EnglishTranscribeLambdaFunction"
+          DEVICE_CONFIG_TABLE_NAME: !Ref DeviceConfigTable
 
   S3EventHandlerLambdaRole:
     Type: AWS::IAM::Role
@@ -127,6 +128,14 @@ Resources:
             Action:
             - lambda:InvokeFunction
             Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:EnglishTranscribeLambdaFunction
+      - PolicyName: DynamoPolicy
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - dynamodb:Scan
+            Resource: !GetAtt DeviceConfigTable.Arn
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
