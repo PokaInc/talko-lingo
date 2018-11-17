@@ -46,8 +46,6 @@ Resources:
       Timeout: '300'
       Environment:
         Variables:
-          STATUS_TOPIC_ARN: !Ref StatusTopic
-          JOBS_TABLE_NAME: !Ref JobsTable
           ENGLISH_TRANSCRIBE_STREAMING_LAMBDA_FUNCTION_NAME: "EnglishTranscribeLambdaFunction"
           DEVICE_CONFIG_TABLE_NAME: !Ref DeviceConfigTable
 
@@ -96,31 +94,9 @@ Resources:
           - Effect: Allow
             Action:
             - iot:Publish
-            Resource: !Sub "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/talko/rx"
-      - PolicyName: SNSPublish
-        PolicyDocument:
-          Version: "2012-10-17"
-          Statement:
-          - Effect: Allow
-            Action:
-            - SNS:Publish
-            Resource: !Ref StatusTopic
-      - PolicyName: JobsTable
-        PolicyDocument:
-          Version: "2012-10-17"
-          Statement:
-          - Effect: Allow
-            Action:
-            - dynamodb:*
-            Resource: !GetAtt JobsTable.Arn
-      - PolicyName: IoT
-        PolicyDocument:
-          Version: "2012-10-17"
-          Statement:
-          - Effect: Allow
-            Action:
-            - iot:Publish
-            Resource: "*"
+            Resource:
+            - !Sub "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/talko/rx"
+            - !Sub "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/talko/job_status"
       - PolicyName: LambdaAccess
         PolicyDocument:
           Statement:
@@ -161,28 +137,12 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: sns.amazonaws.com
 
-  StatusTopic:
-    Type: AWS::SNS::Topic
-
   LocalLambdas:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: local-lambdas.yml
       Parameters:
         AudioFileStore: !Ref AudioFileStore
-
-  JobsTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      AttributeDefinitions:
-      - AttributeName: InputKey
-        AttributeType: S
-      KeySchema:
-      - AttributeName: InputKey
-        KeyType: HASH
-      ProvisionedThroughput:
-        ReadCapacityUnits: 1
-        WriteCapacityUnits: 1
 
   TranscribeRule:
     Type: AWS::Events::Rule
