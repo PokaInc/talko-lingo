@@ -6,10 +6,27 @@ console.log('Hello');
 let client, iotTopic;
 
 window.addEventListener('load', function () {
-  console.log('All assets are loaded')
+  console.log('All assets are loaded');
+
+  let awsAccessKeyId = localStorage.getItem('awsAccessKeyId');
+  let awsSecretAccessKey = localStorage.getItem('awsSecretAccessKey');
+
+  if(awsAccessKeyId === null) {
+    document.getElementById('awsKeys').style.visibility = 'visible';
+    document.getElementById("submitBtn").addEventListener("click", function () {
+      let awsAccessKeyId = document.getElementById('awsAccessKeyId').value;
+      let awsSecretAccessKey = document.getElementById('awsSecretAccessKey').value;
+
+      localStorage.setItem('awsAccessKeyId', awsAccessKeyId);
+      localStorage.setItem('awsSecretAccessKey', awsSecretAccessKey);
+
+      document.getElementById('awsKeys').style.visibility = 'hidden';
+    });
+  }
+
   var AWS = require('aws-sdk');
   AWS.config.update({region: 'us-east-1'});
-  AWS.config.credentials = new AWS.Credentials("", "");
+  AWS.config.credentials = new AWS.Credentials(awsAccessKeyId, awsSecretAccessKey);
 
   var AWSIoTData = require('aws-iot-device-sdk');
   var iot = new AWS.Iot();
@@ -25,8 +42,8 @@ window.addEventListener('load', function () {
       client = AWSIoTData.device({
         region: AWS.config.region,
         protocol: 'wss',
-        accessKeyId: "",
-        secretKey: "",
+        accessKeyId: awsAccessKeyId,
+        secretKey: awsSecretAccessKey,
         // sessionToken: 'something',
         // port: 8000,
         host: data.endpointAddress
@@ -43,6 +60,7 @@ window.addEventListener('load', function () {
   });
 
 });
+
 
 const onConnect = () => {
   console.log('Connected');
