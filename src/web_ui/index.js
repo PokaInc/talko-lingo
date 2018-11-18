@@ -74,21 +74,20 @@ const onMessage = (topic, message) => {
   let status = message.Status;
   console.log(status);
   if (status === 'Transcribing') {
-    resetColumns();
     let row = addRow(message.JobId);
-    console.log(row)
-
-    let elem = document.getElementById("transcribing");
-    activateColumn(elem);
+    activateColumn(row, 'transcribing');
   } else if (status === 'Translating') {
-    let elem = document.getElementById("translating");
-    activateColumn(elem);
+    let row = getRow(message.JobId);
+    activateColumn(row, 'translating');
   } else if (status === 'Pollying') {
-    let elem = document.getElementById("pollying");
-    activateColumn(elem);
+    let row = getRow(message.JobId);
+    activateColumn(row, 'pollying');
   } else if (status === 'Publishing') {
-    let elem = document.getElementById("publishing");
-    activateColumn(elem);
+    let row = getRow(message.JobId);
+    activateColumn(row, 'publishing');
+    window.setTimeout(() => {
+      removeRow(row);
+    }, 10000);
   }
 };
 
@@ -106,21 +105,8 @@ const onClose = () => {
   console.log('onClose');
 };
 
-const getAllColumnElems = () => {
-  return [
-    document.getElementById("transcribing"),
-    document.getElementById("translating"),
-    document.getElementById("pollying"),
-    document.getElementById("publishing"),
-  ]
-};
-
-const resetColumns = () => {
-  let elems = getAllColumnElems();
-  elems.map((elem) => {
-    elem.classList.remove("colored");
-    removeProgressBarStripes(elem);
-  });
+const getRowColumns = (row) => {
+  return Array.from(row.getElementsByClassName("col"));
 };
 
 const removeProgressBarStripes = (elem) => {
@@ -133,30 +119,16 @@ const addProgressBarStripes = (elem) => {
   elem.classList.add("progress-bar-animated");
 };
 
-const activateColumn = (elem) => {
-  let elems = getAllColumnElems();
-  elems.map((elem) => {
+const activateColumn = (row, columnName) => {
+  getRowColumns(row).map((elem) => {
     removeProgressBarStripes(elem);
   });
+
+  let elem = row.getElementsByClassName(columnName)[0];
 
   elem.classList.add("colored");
   addProgressBarStripes(elem);
 };
-
-// <div class="row">
-//   <div id="transcribing" class="transcribing col progress-bar">
-//   Transcribing
-//   </div>
-//   <div id="translating" class="col progress-bar">
-//   Translating
-//   </div>
-//   <div id="pollying" class="col progress-bar">
-//   Pollying
-//   </div>
-//   <div id="publishing" class="col progress-bar">
-//   Publishing
-//   </div>
-//   </div>
 
 const addRow = (rowId) => {
   let div = document.createElement('div');
@@ -177,7 +149,25 @@ const addRow = (rowId) => {
 
   document.getElementById('mainContainer').appendChild(div);
 
+  adjustRowHeights();
+
   return div;
+};
+
+const removeRow = (row) => {
+  row.remove();
+  adjustRowHeights();
+};
+
+const adjustRowHeights = () => {
+  let parent = document.getElementById('mainContainer');
+
+  let childCount = parent.childNodes.length;
+  let childHeight = 100 / childCount;
+
+  Array.from(parent.childNodes).map((node) => {
+    node.style.height = childHeight + '%';
+  });
 };
 
 const getRow = (rowId) => {
