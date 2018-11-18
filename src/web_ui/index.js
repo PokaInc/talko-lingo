@@ -74,16 +74,16 @@ const onMessage = (topic, message) => {
   let status = message.Status;
   console.log(status);
   if (status === 'Transcribing') {
-    let row = addRow(message.JobId);
+    let row = getOrCreateRow(message.JobId);
     activateColumn(row, 'transcribing');
   } else if (status === 'Translating') {
-    let row = getRow(message.JobId);
+    let row = getOrCreateRow(message.JobId);
     activateColumn(row, 'translating');
   } else if (status === 'Pollying') {
-    let row = getRow(message.JobId);
+    let row = getOrCreateRow(message.JobId);
     activateColumn(row, 'pollying');
   } else if (status === 'Publishing') {
-    let row = getRow(message.JobId);
+    let row = getOrCreateRow(message.JobId);
     activateColumn(row, 'publishing');
     window.setTimeout(() => {
       removeRow(row);
@@ -120,13 +120,19 @@ const addProgressBarStripes = (elem) => {
 };
 
 const activateColumn = (row, columnName) => {
-  getRowColumns(row).map((elem) => {
+  let columns = getRowColumns(row);
+  columns.map((elem) => {
     removeProgressBarStripes(elem);
   });
 
   let elem = row.getElementsByClassName(columnName)[0];
 
-  elem.classList.add("colored");
+  let columnIndex = columns.indexOf(elem);
+  for (let i = 0; i <= columnIndex; i++) {
+    let column = columns[i];
+    column.classList.add("colored");
+  }
+
   addProgressBarStripes(elem);
 };
 
@@ -170,8 +176,13 @@ const adjustRowHeights = () => {
   });
 };
 
-const getRow = (rowId) => {
-  return document.getElementById(rowId);
+const getOrCreateRow = (rowId) => {
+  let row = document.getElementById(rowId);
+  if( row === null) {
+    row = addRow(rowId);
+  }
+
+  return row;
 };
 
 
