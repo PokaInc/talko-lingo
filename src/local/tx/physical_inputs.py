@@ -1,14 +1,14 @@
 
 LANGUAGES = {
     0: "XX",
-    20: "FR",
-    16: "EN",
-    13: "ES",
-    12: "DE",
-    6: "RU",
-    5: "CN",
-    25: "TR",
-    24: "AR",
+    5: "FR",
+    6: "EN",
+    12: "ES",
+    13: "DE",
+    16: "RU",
+    20: "CN",
+    24: "TR",
+    25: "AR",
 }
 
 DEV_LANGUAGES = {
@@ -23,6 +23,7 @@ DEV_LANGUAGES = {
 }
 
 PUSH_TO_TALK_PIN_NUMBER = 17
+PUSH_TO_TALK_LED = 4
 
 
 class AbstractPhysicalInterface:
@@ -116,7 +117,12 @@ try:
     import RPi.GPIO as GPIO
 
     GPIO.setmode(GPIO.BCM)
+    # Button LED
+    GPIO.setup(PUSH_TO_TALK_LED, GPIO.OUT)
+    GPIO.output(PUSH_TO_TALK_LED, GPIO.HIGH)
+    # Button
     GPIO.setup(PUSH_TO_TALK_PIN_NUMBER, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    # Rotary Switch
     for switch_pin in LANGUAGES.keys():
         GPIO.setup(switch_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
