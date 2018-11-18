@@ -22,6 +22,7 @@ build-web-ui:
 	cd src/web_ui/node_modules/aws-iot-device-sdk; npm run-script browserize
 	rsync --update src/web_ui/index.js src/web_ui/dist/
 	rsync --update src/web_ui/index.html src/web_ui/dist/
+	rsync --update src/web_ui/index.css src/web_ui/dist/
 	rsync --update src/web_ui/node_modules/aws-iot-device-sdk/browser/aws-iot-sdk-browser-bundle.js src/web_ui/dist/
 
 deploy-web-ui: build-web-ui
