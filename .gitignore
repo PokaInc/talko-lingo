@@ -8,5 +8,8 @@ dist/**
 node_modules
 src/web_ui/dist/**
 
+src/cloud/s3_event_handlers/*
+!src/cloud/s3_event_handlers/s3_event_handlers.py
+
 # Allow .gitkeep for folder structure
 !.gitkeep
