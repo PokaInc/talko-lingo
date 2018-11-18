@@ -48,6 +48,7 @@ Resources:
         Variables:
           ENGLISH_TRANSCRIBE_STREAMING_LAMBDA_FUNCTION_NAME: "EnglishTranscribeLambdaFunction"
           DEVICE_CONFIG_TABLE_NAME: !Ref DeviceConfigTable
+          PIPELINE_CONFIG_TABLE_NAME: !Ref PipelineConfigTable
 
   S3EventHandlerLambdaRole:
     Type: AWS::IAM::Role
@@ -111,7 +112,9 @@ Resources:
           - Effect: Allow
             Action:
             - dynamodb:Scan
-            Resource: !GetAtt DeviceConfigTable.Arn
+            Resource:
+            - !GetAtt DeviceConfigTable.Arn
+            - !GetAtt PipelineConfigTable.Arn
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
@@ -292,6 +295,19 @@ Resources:
         AttributeType: S
       KeySchema:
       - AttributeName: DeviceId
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+  PipelineConfigTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: ParameterName
+        AttributeType: S
+      KeySchema:
+      - AttributeName: ParameterName
         KeyType: HASH
       ProvisionedThroughput:
         ReadCapacityUnits: 1

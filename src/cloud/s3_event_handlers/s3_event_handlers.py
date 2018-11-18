@@ -57,7 +57,9 @@ def handle_new_audio_file(bucketname, key):
 
     publish_status('Transcribing', job_id=job_id)
 
-    transcribe_mode = 'aws'
+    pipeline_config = get_pipeline_config()
+    transcribe_mode = pipeline_config.get('TranscribeMode', 'aws')
+
     if transcribe_mode == 'aws':
         if input_lang == 'en-US':
             lambda_client = boto3.client('lambda')
@@ -212,3 +214,11 @@ def extract_input_output_lang_from_job_id(job_id):
     output_lang = parts[2]
 
     return input_lang, output_lang
+
+
+def get_pipeline_config():
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table(os.environ['PIPELINE_CONFIG_TABLE_NAME'])
+    items = table.scan()['Items']
+
+    return {item['ParameterName']: item['ParameterValue'] for item in items}
