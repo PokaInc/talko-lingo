@@ -1,25 +1,22 @@
 
 LANGUAGES = {
-    0: "XX",
-    5: "FR",
-    6: "EN",
-    12: "ES",
-    13: "DE",
-    16: "RU",
-    20: "CN",
-    24: "TR",
-    25: "AR",
+    0: 'XXXX',
+    5: 'en-AU',
+    6: 'en-US',
+    12: 'en-GB',
+    13: 'es-US',
+    16: 'fr-CA',
+    20: 'XXXX',
+    24: 'XXXX',
+    25: 'XXXX',
 }
 
 DEV_LANGUAGES = {
-    0: "FR",
-    1: "EN",
-    2: "ES",
-    3: "DE",
-    4: "RU",
-    5: "CN",
-    6: "TR",
-    7: "AR",
+    0: 'en-AU',
+    1: 'en-US',
+    2: 'en-GB',
+    3: 'es-US',
+    4: 'fr-CA',
 }
 
 PUSH_TO_TALK_PIN_NUMBER = 17
@@ -54,13 +51,13 @@ class GPIOPhysicalInterface(AbstractPhysicalInterface):
         self.gpio = gpio
         self.talk_button_pin_number = talk_button_pin_number
         self.on_language_change = lambda *args: None
-        self.selected_pin = -1
+        self.selected_pin = 0
 
     def tick(self):
         selected_pin = next((pin for pin in LANGUAGES.keys() if self.gpio.input(pin) == 0), self.selected_pin)
         if self.selected_pin != selected_pin:
             self.selected_pin = selected_pin
-            new_language = LANGUAGES.get(self.selected_pin, "XX")
+            new_language = LANGUAGES.get(self.selected_pin, LANGUAGES[0])
             self.on_language_change(new_language)
 
     @property
@@ -78,7 +75,7 @@ class KeyboardPhysicalInterface(AbstractPhysicalInterface):
         self.languages = languages_dev
         self._shift_key_pressed = False
         self._current_language_code = 0
-        self._current_language = "EN"
+        self._current_language = DEV_LANGUAGES[0]
         self._listener = listener(on_press=self._on_press, on_release=self._on_release)
         self._key_module = key_module
         self.on_language_change = lambda *args : None

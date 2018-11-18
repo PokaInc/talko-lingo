@@ -8,6 +8,7 @@ from audio_recorder import AudioRecorder
 from physical_inputs import PhysicalInterface
 from shared.display import Display
 
+DEVICE_ID = os.environ['DEVICE_ID']
 RECORDING_DEVICE_NAME = os.environ['RECORDING_DEVICE_NAME']
 BUCKET_NAME = os.environ['AUDIO_FILE_STORE']
 current_language_code = 'en'
@@ -21,9 +22,10 @@ print('=== {} READY ==='.format(display.__class__.__name__))
 
 def on_new_recording(recording):
     local_path = recording.filename
-    s3_path = 'input/{hostname}/{language_code}/{filename}'.format(
+    s3_path = 'input/{hostname}/{language_code}/{device_id}/{filename}'.format(
         hostname=socket.gethostname(),
         language_code=current_language_code,
+        device_id=DEVICE_ID,
         filename=os.path.basename(recording.filename),
     )
     bucket.upload_file(local_path, s3_path)
@@ -33,7 +35,7 @@ def on_new_recording(recording):
 def on_language_change(language_code):
     global current_language_code
     current_language_code = language_code
-    display.show(' {} '.format(language_code))
+    display.show(language_code)
 
 
 with PhysicalInterface as physical_interface:
