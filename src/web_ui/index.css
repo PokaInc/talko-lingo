@@ -1,0 +1,34 @@
+body, html {
+    height: 100%;
+    background-color: black;
+    color: lightgrey;
+}
+
+
+#mainContainer {
+    height: 100%;
+}
+
+.row {
+    height: 100%;
+}
+
+.col {
+    background-color: black;
+}
+
+.transcribing.colored {
+    background-color: #5EBE92;
+}
+
+.translating.colored {
+    background-color: #54A983;
+}
+
+.pollying.colored {
+    background-color: #4B9775;
+}
+
+.publishing.colored {
+    background-color: #418465;
+}

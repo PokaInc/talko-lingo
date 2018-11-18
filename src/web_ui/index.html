@@ -3,16 +3,22 @@
 <head>
   <title>Hello World! Site Title</title>
   <script src="index.js"></script>
-  <script src="aws-iot-sdk-browser-bundle.js"></script>
+  <script src="dist/aws-iot-sdk-browser-bundle.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <link rel="stylesheet" href="index.css">
 </head>
 <body>
-<h1>Hello World!</h1>
-<div id="awsKeys" style="visibility: hidden">
+<div id="awsKeys" style="display: none">
   <label for="awsAccessKeyId">AWS Access Key ID</label>
   <input type="text" id="awsAccessKeyId">
   <label for="awsSecretAccessKey">AWS Secret Access Key</label>
   <input type="password" id="awsSecretAccessKey">
   <button id="submitBtn">Submit</button>
+</div>
+
+<div id="mainContainer" class="container-fluid">
+
 </div>
 </body>
 </html>

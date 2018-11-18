@@ -11,8 +11,8 @@ window.addEventListener('load', function () {
   let awsAccessKeyId = localStorage.getItem('awsAccessKeyId');
   let awsSecretAccessKey = localStorage.getItem('awsSecretAccessKey');
 
-  if(awsAccessKeyId === null) {
-    document.getElementById('awsKeys').style.visibility = 'visible';
+  if (awsAccessKeyId === null) {
+    document.getElementById('awsKeys').style.display = 'block';
     document.getElementById("submitBtn").addEventListener("click", function () {
       let awsAccessKeyId = document.getElementById('awsAccessKeyId').value;
       let awsSecretAccessKey = document.getElementById('awsSecretAccessKey').value;
@@ -20,7 +20,7 @@ window.addEventListener('load', function () {
       localStorage.setItem('awsAccessKeyId', awsAccessKeyId);
       localStorage.setItem('awsSecretAccessKey', awsSecretAccessKey);
 
-      document.getElementById('awsKeys').style.visibility = 'hidden';
+      document.getElementById('awsKeys').style.display = 'none';
     });
   }
 
@@ -69,8 +69,27 @@ const onConnect = () => {
 
 const onMessage = (topic, message) => {
   console.log('Message');
-  var decoded = new TextDecoder("utf-8").decode(message);
-  console.log(decoded);
+  message = JSON.parse(new TextDecoder("utf-8").decode(message));
+  console.log(message);
+  let status = message.Status;
+  console.log(status);
+  if (status === 'Transcribing') {
+    resetColumns();
+    let row = addRow(message.JobId);
+    console.log(row)
+
+    let elem = document.getElementById("transcribing");
+    activateColumn(elem);
+  } else if (status === 'Translating') {
+    let elem = document.getElementById("translating");
+    activateColumn(elem);
+  } else if (status === 'Pollying') {
+    let elem = document.getElementById("pollying");
+    activateColumn(elem);
+  } else if (status === 'Publishing') {
+    let elem = document.getElementById("publishing");
+    activateColumn(elem);
+  }
 };
 
 const onError = () => {
@@ -85,6 +104,84 @@ const onOffline = () => {
 
 const onClose = () => {
   console.log('onClose');
+};
+
+const getAllColumnElems = () => {
+  return [
+    document.getElementById("transcribing"),
+    document.getElementById("translating"),
+    document.getElementById("pollying"),
+    document.getElementById("publishing"),
+  ]
+};
+
+const resetColumns = () => {
+  let elems = getAllColumnElems();
+  elems.map((elem) => {
+    elem.classList.remove("colored");
+    removeProgressBarStripes(elem);
+  });
+};
+
+const removeProgressBarStripes = (elem) => {
+  elem.classList.remove("progress-bar-striped");
+  elem.classList.remove("progress-bar-animated");
+};
+
+const addProgressBarStripes = (elem) => {
+  elem.classList.add("progress-bar-striped");
+  elem.classList.add("progress-bar-animated");
+};
+
+const activateColumn = (elem) => {
+  let elems = getAllColumnElems();
+  elems.map((elem) => {
+    removeProgressBarStripes(elem);
+  });
+
+  elem.classList.add("colored");
+  addProgressBarStripes(elem);
+};
+
+// <div class="row">
+//   <div id="transcribing" class="transcribing col progress-bar">
+//   Transcribing
+//   </div>
+//   <div id="translating" class="col progress-bar">
+//   Translating
+//   </div>
+//   <div id="pollying" class="col progress-bar">
+//   Pollying
+//   </div>
+//   <div id="publishing" class="col progress-bar">
+//   Publishing
+//   </div>
+//   </div>
+
+const addRow = (rowId) => {
+  let div = document.createElement('div');
+  div.classList.add('row');
+  div.id = rowId;
+  div.innerHTML = '  <div class="transcribing col progress-bar">\n' +
+    '  Transcribing\n' +
+    '  </div>\n' +
+    '  <div class="translating col progress-bar">\n' +
+    '  Translating\n' +
+    '  </div>\n' +
+    '  <div class="pollying col progress-bar">\n' +
+    '  Pollying\n' +
+    '  </div>\n' +
+    '  <div class="publishing col progress-bar">\n' +
+    '  Publishing\n' +
+    '  </div>';
+
+  document.getElementById('mainContainer').appendChild(div);
+
+  return div;
+};
+
+const getRow = (rowId) => {
+  return document.getElementById(rowId);
 };
 
 
