@@ -24,7 +24,7 @@ prefix=
 EOL
 
 # Install the dependencies
-pip3 install -r requirements.txt -t ${TEMP_DIR}
+pip3 install -r local_requirements.txt -t ${TEMP_DIR}
 
 # Add the actual code
 cp *.py ${TEMP_DIR}
