@@ -13,3 +13,9 @@ In order to complete this project, you will need two copies of each of those thi
 7. **Adafruit's Potentiometer Knob**: Just to put on the previously mentioned Rotary Selector so that it looks *sexier*.
 8. **Adafruit's Alphanumeric Display with its I2C Backpack**: Adafruit has a really easy-to-use LED alphanumeric display, including very well detailed tutorial for Raspberry Pi..
 9. **A flat ribbon cable**: We chose to use a rainbow-colored flat ribbon for ease of use, but really anything you have on-hand will do the job ;-)
+
+## Assembly
+
+First, you will need to prepare some cables to connect the components to the speaker bonnet. In our setup, we used these cable lengths:
+
+![Cable lengths](./img/IMG_0363.jpg "Cable lengths")
