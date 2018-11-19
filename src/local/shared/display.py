@@ -32,7 +32,7 @@ class LedDisplay(AbstractDisplay):
         message = self._format_message(message)
         assert len(message) <= 4
         self.alphanum_display.clear()
-        self.alphanum_display.print_str()
+        self.alphanum_display.print_str(message)
         self.alphanum_display.write_display()
 
     @staticmethod
