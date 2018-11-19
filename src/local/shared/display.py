@@ -29,10 +29,15 @@ class LedDisplay(AbstractDisplay):
         self.alphanum_display.begin()
 
     def show(self, message):
-        assert len(message) == 4
+        message = self._format_message(message)
+        assert len(message) <= 4
         self.alphanum_display.clear()
-        self.alphanum_display.print_str(message.replace('-', '').upper())
+        self.alphanum_display.print_str()
         self.alphanum_display.write_display()
+
+    @staticmethod
+    def _format_message(message):
+        return message.replace('-', '').upper()
 
 
 try:
