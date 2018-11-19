@@ -3,6 +3,9 @@ import os
 import uuid
 
 import boto3
+from google.cloud import speech
+from google.cloud.speech import enums
+from google.cloud.speech import types
 
 
 def lambda_handler(event, _):
@@ -52,34 +55,56 @@ def handle_new_audio_file(bucketname, key):
 
     job_id = build_job_id(input_lang, output_lang)
 
-    if input_lang == 'en-US':
-        lambda_client = boto3.client('lambda')
-        publish_status('Transcribing', job_id=job_id)
-        response = lambda_client.invoke(
-            FunctionName=os.environ['ENGLISH_TRANSCRIBE_STREAMING_LAMBDA_FUNCTION_NAME'],
-            InvocationType='RequestResponse',
-            Payload=json.dumps({
-                "bucketName": bucketname,
-                "objectKey": key,
-            }),
+    publish_status('Transcribing', job_id=job_id)
+
+    pipeline_config = get_pipeline_config()
+    transcribe_mode = pipeline_config.get('TranscribeMode', 'aws')
+
+    if transcribe_mode == 'aws':
+        if input_lang == 'en-US':
+            lambda_client = boto3.client('lambda')
+
+            response = lambda_client.invoke(
+                FunctionName=os.environ['ENGLISH_TRANSCRIBE_STREAMING_LAMBDA_FUNCTION_NAME'],
+                InvocationType='RequestResponse',
+                Payload=json.dumps({
+                    "bucketName": bucketname,
+                    "objectKey": key,
+                }),
+            )
+
+            text_to_translate = response['Payload'].read().decode('utf-8')
+            print(text_to_translate)
+            translate(text_to_translate, bucketname, job_id=job_id)
+        else:
+            transcribe_client = boto3.client('transcribe')
+            response = transcribe_client.start_transcription_job(
+                TranscriptionJobName=job_id,
+                LanguageCode=input_lang,
+                MediaFormat=os.path.splitext(key)[1][1:],
+                Media={
+                    'MediaFileUri': 'https://s3.amazonaws.com/{}/{}'.format(bucketname, key)
+                },
+                OutputBucketName=bucketname
+            )
+            print(response)
+
+    else:
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'service_account.json'
+        client = speech.SpeechClient()
+
+        content = boto3.client('s3').get_object(Bucket=bucketname, Key=key)['Body'].read()
+        audio = types.RecognitionAudio(content=content)
+
+        config = types.RecognitionConfig(
+            encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
+            sample_rate_hertz=16000,
+            language_code=input_lang
         )
 
-        text_to_translate = response['Payload'].read().decode('utf-8')
-        print(text_to_translate)
-        translate(text_to_translate, bucketname, job_id=job_id)
-    else:
-        transcribe_client = boto3.client('transcribe')
-        publish_status('Transcribing', job_id=job_id)
-        response = transcribe_client.start_transcription_job(
-            TranscriptionJobName=job_id,
-            LanguageCode=input_lang,
-            MediaFormat=os.path.splitext(key)[1][1:],
-            Media={
-                'MediaFileUri': 'https://s3.amazonaws.com/{}/{}'.format(bucketname, key)
-            },
-            OutputBucketName=bucketname
-        )
-        print(response)
+        response = client.recognize(config, audio)
+        text_to_translate = response.results[0].alternatives[0].transcript
+        translate(text_to_translate, bucketname, job_id)
 
 
 def build_presigned_url(s3_client, bucketname, key):
@@ -189,3 +214,11 @@ def extract_input_output_lang_from_job_id(job_id):
     output_lang = parts[2]
 
     return input_lang, output_lang
+
+
+def get_pipeline_config():
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table(os.environ['PIPELINE_CONFIG_TABLE_NAME'])
+    items = table.scan()['Items']
+
+    return {item['ParameterName']: item['ParameterValue'] for item in items}
