@@ -10,7 +10,8 @@ import subprocess
 
 def on_connect(client, userdata, flags, rc):
     print("Connection returned result: " + str(rc) )
-    client.subscribe("#" , 1 )
+    client.subscribe("talko/rx/" + os.environ['DEVICE_ID'], 1)
+
 
 def on_message(client, userdata, msg):
     print("topic: "+msg.topic)
@@ -19,6 +20,7 @@ def on_message(client, userdata, msg):
     audio_file_url = payload["AudioFileUrl"]
     print("Playing: {}".format(audio_file_url))
     subprocess.call(['mpg321', audio_file_url.replace("https://", "http://")])
+
 
 mqttc = paho.Client()
 mqttc.on_connect = on_connect
@@ -35,6 +37,7 @@ keyPath = "2402aed9e0-private.pem.key"
 mqttc.tls_set(caPath, certfile=certPath, keyfile=keyPath, cert_reqs=ssl.CERT_REQUIRED, tls_version=ssl.PROTOCOL_TLSv1_2, ciphers=None)
 mqttc.connect(awshost, awsport, keepalive=60)
 mqttc.loop_forever()
+
 
 def handler(event, _):
     # mpg321 doesn't recognize URLs unless they start with http://
