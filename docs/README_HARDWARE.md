@@ -56,6 +56,36 @@ Once the components are soldered to their wires, you can go-on and begin hooking
 
 - The last data pin of the push button to the GPIO pin #17. This will be used to trigger when the user has something to say.
 
-### The LED Display
+### The LED display
 
 ![LED Display](./img/IMG_0387.jpg "LED Display")
+
+This component is pretty straight-forward, you only have 4 wires to solder (plus the LED displays to their backpack, of course...):
+
+- The VCC (+) and GND (-) are soldered to a 3.3V and a ground pin from the speaker bonnet respectively. Note that we do not use the Vi2c pin, so make sure you have the good one.
+
+- SDA and SCL are soldered to their respective pins on the speaker bonnet. **Note that the pins are inverted on the LED backpack compared to the bonnet.** Make sure you don't invert them or it will not work.
+
+### The rotary selector switch
+
+![LED Display](./img/IMG_0389.jpg "LED Display")
+
+This last component needs a little more attention, as there are 9 pins to solder:
+
+- There is a "centered" pin which we will use to connect the ground.
+
+- The other pins will be soldered to GPIO pins #20, 16, 13, 12, 6, 5, 25 and 24.
+
+Note that the choice of pin is arbitraty, but you **cannot choose the pins 19 or 21**, as they are reserved by the speaker bonnet.
+
+### Final result
+
+The final result should look like something similar to this:
+
+![Final result](./img/final.jpg "Final result")
+
+On the left part, you have the resulting piece of hardware that has just been soldered. But in order to protect our newly soldered wiring, the right side of the picture shows how we used hot glue to isolate and harden our setup.
+
+## 3D printing
+
+Once we have the components soldered together, we can 3D-print a case 
