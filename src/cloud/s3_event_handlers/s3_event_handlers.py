@@ -44,16 +44,14 @@ def get_device_languages():
 
 
 def handle_new_audio_file(bucketname, key):
-    device_id = key.rpartition('/')[0].rpartition('/')[2]
-    device_languages = get_device_languages()
-    if device_id == 'device_a':
-        input_lang = device_languages['device_a']
-        output_lang = device_languages['device_b']
-    else:
-        input_lang = device_languages['device_b']
-        output_lang = device_languages['device_a']
+    input_device_id = key.rpartition('/')[0].rpartition('/')[2]
+    output_device_id = 'device_b' if input_device_id == 'device_a' else 'device_a'
 
-    job_id = build_job_id(input_lang, output_lang)
+    device_languages = get_device_languages()
+    input_lang = device_languages[input_device_id]
+    output_lang = device_languages[output_device_id]
+
+    job_id = build_job_id(input_device_id, input_lang, output_device_id, output_lang)
 
     publish_status('Transcribing', job_id=job_id)
 
@@ -122,7 +120,7 @@ def handle_polly_generated_file(s3_client, bucketname, key, job_id):
     publish_status('Publishing', job_id=job_id)
     iot_client = boto3.client('iot-data')
     print(iot_client.publish(
-        topic='talko/rx',
+        topic='talko/rx/' + extract_output_device_from_job_id(job_id),
         payload=json.dumps({
             'AudioFileUrl': build_presigned_url(s3_client, bucketname, key)
         }).encode('utf-8')
@@ -200,20 +198,29 @@ def publish_status(status, job_id):
     }))
 
 
-def build_job_id(input_lang, output_lang):
-    return '{unique_id}_{input_lang}_{ouput_lang}'.format(
+def build_job_id(input_device_id, input_lang, output_device_id, output_lang):
+    return '{unique_id}-{input_device_id}-{input_lang}-{output_device_id}-{ouput_lang}'.format(
         unique_id=str(uuid.uuid4()),
+        input_device_id=input_device_id,
         input_lang=input_lang,
+        output_device_id=output_device_id,
         ouput_lang=output_lang,
     )
 
 
 def extract_input_output_lang_from_job_id(job_id):
-    parts = job_id.split('_')
-    input_lang = parts[1]
-    output_lang = parts[2]
+    parts = job_id.split('-')
+    input_lang = parts[2]
+    output_lang = parts[4]
 
     return input_lang, output_lang
+
+
+def extract_output_device_from_job_id(job_id):
+    parts = job_id.split('-')
+    output_device_id = parts[3]
+
+    return output_device_id
 
 
 def get_pipeline_config():
