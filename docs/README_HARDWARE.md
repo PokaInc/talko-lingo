@@ -46,7 +46,7 @@ Notice that as previously said, we used hot glue in order to isolate and harden 
 
 ### The speaking push-button
 
-![PushButton](./img/IMG_0384.jpg "LED Push Button")
+![PushButton](./img/IMG_0384.JPG "LED Push Button")
 
 Once the components are soldered to their wires, you can go-on and begin hooking-them up to the speaker bonnet. We suggest starting with the push-button with the following pin associations:
 
@@ -58,7 +58,7 @@ Once the components are soldered to their wires, you can go-on and begin hooking
 
 ### The LED display
 
-![LED Display](./img/IMG_0387.jpg "LED Display")
+![LED Display](./img/IMG_0387.JPG "LED Display")
 
 This component is pretty straight-forward, you only have 4 wires to solder (plus the LED displays to their backpack, of course...):
 
@@ -68,7 +68,7 @@ This component is pretty straight-forward, you only have 4 wires to solder (plus
 
 ### The rotary selector switch
 
-![LED Display](./img/IMG_0389.jpg "LED Display")
+![LED Display](./img/IMG_0389.JPG "LED Display")
 
 This last component needs a little more attention, as there are 9 pins to solder:
 
@@ -88,4 +88,4 @@ On the left part, you have the resulting piece of hardware that has just been so
 
 ## 3D printing
 
-Once we have the components soldered together, we can 3D-print a case 
+Once we have the components soldered together, we can 3D-print a case
