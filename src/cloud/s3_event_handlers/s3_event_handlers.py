@@ -98,7 +98,7 @@ def handle_new_audio_file(bucketname, key):
 
         config = types.RecognitionConfig(
             encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
-            sample_rate_hertz=16000,
+            sample_rate_hertz=44100,
             language_code=input_lang
         )
 
