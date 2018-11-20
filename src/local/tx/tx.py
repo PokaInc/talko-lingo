@@ -1,3 +1,4 @@
+import json
 import os
 import socket
 from time import sleep
@@ -13,6 +14,7 @@ RECORDING_DEVICE_NAME = os.environ['RECORDING_DEVICE_NAME']
 BUCKET_NAME = os.environ['AUDIO_FILE_STORE']
 current_language_code = 'en'
 
+iot_client = boto3.client('iot-data')
 s3_resource = boto3.resource('s3')
 bucket = s3_resource.Bucket(BUCKET_NAME)
 
@@ -36,6 +38,14 @@ def on_language_change(language_code):
     global current_language_code
     current_language_code = language_code
     display.show(language_code)
+
+    iot_client.publish(
+        topic='config-topic',
+        payload=json.dumps({
+            "device_id": DEVICE_ID,
+            "lang": language_code,
+        })
+    )
 
 
 with PhysicalInterface as physical_interface:
