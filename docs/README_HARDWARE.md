@@ -85,7 +85,3 @@ The final result should look like something similar to this:
 ![Final result](./img/final.jpg "Final result")
 
 On the left part, you have the resulting piece of hardware that has just been soldered. But in order to protect our newly soldered wiring, the right side of the picture shows how we used hot glue to isolate and harden a bit our setup.
-
-## 3D printing
-
-We designed our case using the [Fusion360](https://www.autodesk.com/products/fusion-360/overview) software. Although it is a commercial product, it is free for hobbyists, you just need to activate your license after installing the free trial.
