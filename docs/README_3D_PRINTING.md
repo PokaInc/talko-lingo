@@ -1,4 +1,4 @@
-## 3D printing
+## 3D printing & Assembly
 
 ### Fusion 360
 
@@ -59,6 +59,16 @@ Just verify that all the parameters seem OK, and print-away!
 
 In the end, you will have those three plastic components:
 
-![Octoprint](./img/finalparts.jpg "Octoprint")
+![FinalParts](./img/finalparts.jpg "Final Parts")
 
 Talko-Lingo is now ready to assemble! :-)
+
+Begin by screwing underneath the bottom shell so that screws that align with the Raspberry Pi make it sit properly in place and secure the Pi with small hex nuts. You can also install the microphone in the middle-top USB port just like in this picture:
+
+![WithPi](./img/withpi.jpg "With Pi")
+
+Finally, you can put the soldered Speaker Bonnet on the GPIO pins, and cross your fingers that everything works as expected :-) Jump to the [RaspberryPi Setup]() in order to test the components and proceed with the software part of the project!
+
+![WithBonnet](./img/withbonnet.jpg "With Pi")
+
+Rinse and repeat to make the second Talko-Lingo device in order to start making new friends from all around the world!
