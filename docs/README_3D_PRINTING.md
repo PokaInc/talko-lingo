@@ -49,6 +49,16 @@ M107 ; turn off fan. Don't use M106 S1. Some say M107 doesn't work for them but 
 
 ### OctoPrint
 
-Finally, when the model has been sliced and we are satisfied with the preview it gives, the last stage before the actual printer was to upload it to OctoPi, a RaspberryPi equipped with the [OctoPrint](https://octoprint.org) software. Just verify that all the parameters seem OK, and print-away!
+Finally, when the model has been sliced and we are satisfied with the preview it gives, the last stage before the actual printer was to upload it to OctoPi, a RaspberryPi equipped with the [OctoPrint](https://octoprint.org) software.
 
 ![Octoprint](./img/octopi.png "Octoprint")
+
+Just verify that all the parameters seem OK, and print-away!
+
+### Results
+
+In the end, you will have those three plastic components:
+
+![Octoprint](./img/finalparts.jpg "Octoprint")
+
+Talko-Lingo is now ready to assemble! :-)
