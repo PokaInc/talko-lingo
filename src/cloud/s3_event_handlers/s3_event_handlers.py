@@ -43,7 +43,7 @@ def handle_new_audio_file(bucketname, key):
 
     input_s3object = boto3.resource('s3').Object(bucketname, key)
 
-    publish_status('Transcribing', job_id=job_id)
+    publish_status('SpeechToText', job_id=job_id)
     text_to_translate, async = speech_to_text(input_s3object, input_lang, job_id)
 
     if text_to_translate is not None and async is False:
@@ -53,10 +53,10 @@ def handle_new_audio_file(bucketname, key):
 
 
 def on_transcribing_done(text_to_translate, output_bucket, job_id):
-    publish_status('Translating', job_id=job_id, TextToTranslate=text_to_translate)
+    publish_status('Translating', job_id=job_id, Text=text_to_translate)
     translated_text = translate(text_to_translate, job_id=job_id)
 
-    publish_status('Pollying', job_id=job_id, TextToPolly=translated_text)
+    publish_status('TextToSpeech', job_id=job_id, Text=translated_text)
     text_to_speech(translated_text, output_bucket=output_bucket, job_id=job_id)
 
 
