@@ -14,7 +14,7 @@ The model is composed of three components: The bottom shell where the Raspberry 
 
 ![Cura](./img/cura.jpg "Cura")
 
-It will take care of generating the `gcode` file that most printers will support. There is a pretty large amount of parameters, but Cura has a preset for most popular 3D printers on the market. In our case, we used a [Monoprice MP Select Mini V1](https://www.monoprice.com/product?c_id=107&cp_id=10724&cs_id=1072403&p_id=31429&seq=1&format=2) printer with default settings except for one thing: the `Start G-Code` and `End G-Code`, which we took from [their website](https://mpselectmini.com/starting_ending_g-code_scripts) and gives better overall performance.
+It will take care of generating the `gcode` file that most printers will support. There is a pretty large amount of parameters, but Cura has a preset for most popular 3D printers on the market. In our case, we used a [Monoprice MP Select Mini V1](https://www.monoprice.com/product?c_id=107&cp_id=10724&cs_id=1072403&p_id=31429&seq=1&format=2) printer with default settings except for one thing: the `Start G-Code` and `End G-Code`, which we took from [their website](https://mpselectmini.com/starting_ending_g-code_scripts) and gives better overall performance. Our model does not need any "support", we suggest disabling them or you might have a hard time cleaning-up your print afterwards.
 
 #### Starting G-code
  ```
