@@ -40,7 +40,7 @@ def on_language_change(language_code):
     display.show(language_code)
 
     iot_client.publish(
-        topic='config-topic',
+        topic='talko/config-topic',
         payload=json.dumps({
             "device_id": DEVICE_ID,
             "lang": language_code,

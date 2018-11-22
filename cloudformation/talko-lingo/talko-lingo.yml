@@ -237,7 +237,7 @@ Resources:
       TopicRulePayload:
         RuleDisabled: false
         Sql: >-
-          Select * FROM 'config-topic'
+          Select * FROM 'talko/config-topic'
         Actions:
         - Lambda:
             FunctionArn: !GetAtt DeviceConfigLambdaFunction.Arn

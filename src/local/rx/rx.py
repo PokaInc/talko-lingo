@@ -9,7 +9,7 @@ import subprocess
 
 
 def on_connect(client, userdata, flags, rc):
-    print("Connection returned result: " + str(rc) )
+    print("Connection returned result: " + str(rc))
     client.subscribe("talko/rx/" + os.environ['DEVICE_ID'], 1)
 
 
@@ -26,20 +26,17 @@ mqttc = paho.Client()
 mqttc.on_connect = on_connect
 mqttc.on_message = on_message
 
-awshost = "a2pbsc87z9l319-ats.iot.us-east-1.amazonaws.com"
-awsport = 8883
-clientId = "talko-lingo_Core"
-thingName = "talko-lingo_Core"
-caPath = "AmazonRootCA1.pem"
-certPath = "2402aed9e0-certificate.pem.crt"
-keyPath = "2402aed9e0-private.pem.key"
-
-mqttc.tls_set(caPath, certfile=certPath, keyfile=keyPath, cert_reqs=ssl.CERT_REQUIRED, tls_version=ssl.PROTOCOL_TLSv1_2, ciphers=None)
-mqttc.connect(awshost, awsport, keepalive=60)
+mqttc.tls_set(
+    os.environ['AMAZON_ROOT_CA'],
+    certfile=os.environ['CRT'],
+    keyfile=os.environ['PRIVATE_KEY'],
+    cert_reqs=ssl.CERT_REQUIRED,
+    tls_version=ssl.PROTOCOL_TLSv1_2,
+    ciphers=None
+)
+mqttc.connect(os.environ['IOT_ENDPOINT'], os.environ['IOT_ENDPOINT_PORT'], keepalive=60)
 mqttc.loop_forever()
 
 
-def handler(event, _):
-    # mpg321 doesn't recognize URLs unless they start with http://
-    audio_file_url = event['AudioFileUrl'].replace('https://', 'http://')
-    subprocess.call(['mpg321', audio_file_url])
+def dummy_handler(event, context):
+    pass

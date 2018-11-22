@@ -29,8 +29,8 @@ function SetupDeviceCredentials {
     AUDIO_FILE_STORE=$(aws cloudformation describe-stacks --stack-name ${TALKO_LINGO_STACK_NAME} --query "Stacks[0].Outputs[?OutputKey=='AudioFileStore'].OutputValue" --output text)
     THING_NAME=$(aws cloudformation describe-stacks --stack-name ${TALKO_LINGO_STACK_NAME} --query "Stacks[0].Outputs[?OutputKey=='ThingName'].OutputValue" --output text)
 
-    CRT_FILE=${TMP_FOLDER}/iot-device-$1.crt
-    aws iot describe-certificate --certificate-id ${IOT_CERTIFICATE_ID} --query 'certificateDescription.certificatePem' --output text > ${CRT_FILE}
+    CRT=${TMP_FOLDER}/iot-device-$1.crt
+    aws iot describe-certificate --certificate-id ${IOT_CERTIFICATE_ID} --query 'certificateDescription.certificatePem' --output text > ${CRT}
 
     AMAZON_ROOT_CA=${TMP_FOLDER}/AmazonRootCA1.pem
     wget https://www.amazontrust.com/repository/AmazonRootCA1.pem -O ${AMAZON_ROOT_CA}
@@ -41,14 +41,17 @@ function SetupDeviceCredentials {
     echo "Execute the following on device $1 terminal: "
 
     cat << EOF > ${CONFIGURATION}
-export DEVICE_ID=device_$(echo $1 | awk '{print tolower($0)}')
-export AWS_ACCESS_KEY_ID=${ACCESS_KEY_ID}
-export AWS_SECRET_ACCESS_KEY=${SECRET_ACCESS_KEY}
-export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-`aws configure get region`}
-export IOT_ENDPOINT=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS --query endpointAddress --output text)
-export IOT_ENDPOINT_PORT=8883
-export THING_NAME=${THING_NAME}
-export AUDIO_FILE_STORE=${AUDIO_FILE_STORE}
+DEVICE_ID=device_$(echo $1 | awk '{print tolower($0)}')
+AWS_ACCESS_KEY_ID=${ACCESS_KEY_ID}
+AWS_SECRET_ACCESS_KEY=${SECRET_ACCESS_KEY}
+AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-`aws configure get region`}
+IOT_ENDPOINT=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS --query endpointAddress --output text)
+IOT_ENDPOINT_PORT=8883
+THING_NAME=${THING_NAME}
+AUDIO_FILE_STORE=${AUDIO_FILE_STORE}
+AMAZON_ROOT_CA=AmazonRootCA1.pem
+PRIVATE_KEY=iot-device-$1.key
+CRT=iot-device-$1.crt
 EOF
 
     pushd ${TMP_FOLDER}
