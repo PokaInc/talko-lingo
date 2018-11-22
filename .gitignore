@@ -10,6 +10,7 @@ src/web_ui/dist/**
 
 src/cloud/s3_event_handlers/*
 !src/cloud/s3_event_handlers/s3_event_handlers.py
+!src/cloud/s3_event_handlers/talko_lingo/
 
 .config
 
