@@ -3,10 +3,12 @@ import os
 import uuid
 
 import boto3
-from google.cloud import speech
-from google.cloud import texttospeech
-from google.cloud.speech import enums
-from google.cloud.speech import types
+from google.cloud import speech, texttospeech
+from google.cloud.speech import enums, types
+
+from talko_lingo.utils.job_id import build_job_id, extract_output_device_from_job_id, \
+    extract_input_output_lang_from_job_id
+from talko_lingo.utils.translate import translate
 
 
 def lambda_handler(event, _):
@@ -74,7 +76,9 @@ def handle_new_audio_file(bucketname, key):
 
             text_to_translate = response['Payload'].read().decode('utf-8')
             print(text_to_translate)
-            translate(text_to_translate, bucketname, job_id=job_id)
+            publish_status('Translating', job_id=job_id, TextToTranslate=text_to_translate)
+            translated_text = translate(text_to_translate, bucketname, job_id=job_id)
+            text_to_speech(translated_text, bucketname, job_id=job_id)
         else:
             transcribe_client = boto3.client('transcribe')
             response = transcribe_client.start_transcription_job(
@@ -103,7 +107,9 @@ def handle_new_audio_file(bucketname, key):
         response = client.recognize(config, audio)
         print(response)
         text_to_translate = response.results[0].alternatives[0].transcript
-        translate(text_to_translate, bucketname, job_id)
+        publish_status('Translating', job_id=job_id, TextToTranslate=text_to_translate)
+        translated_text = translate(text_to_translate, job_id)
+        text_to_speech(translated_text, bucketname, job_id=job_id)
 
 
 def build_presigned_url(s3_client, bucketname, key):
@@ -145,32 +151,10 @@ def handle_transcribe_event(event):
 
     content = json.loads(boto3.client('s3').get_object(Bucket=bucketname, Key=key)['Body'].read())
     text_to_translate = content['results']['transcripts'][0]['transcript']
-    translate(text_to_translate, bucketname, job_id=job_id)
 
-
-def translate(text_to_translate, destination_bucket_name, job_id):
     publish_status('Translating', job_id=job_id, TextToTranslate=text_to_translate)
-
-    input_lang, output_lang = extract_input_output_lang_from_job_id(job_id)
-
-    # we're only interested in the first part of the code, e.g. en-US becomes en, fr-CA becomes fr
-    input_lang = input_lang.split('-')[0]
-    output_lang = output_lang.split('-')[0]
-
-    print('Translating job ' + job_id)
-    if input_lang != output_lang:
-        translate_client = boto3.client('translate')
-        translated_text = translate_client.translate_text(
-            Text=text_to_translate,
-            SourceLanguageCode=input_lang,
-            TargetLanguageCode=output_lang
-        )['TranslatedText']
-        print('Translated text: ' + translated_text)
-    else:
-        translated_text = text_to_translate
-        print('Same input/output language, not translating')
-
-    text_to_speech(translated_text, destination_bucket_name, job_id=job_id)
+    translated_text = translate(text_to_translate, job_id=job_id)
+    text_to_speech(translated_text, bucketname, job_id=job_id)
 
 
 def text_to_speech(text, bucketname, job_id):
@@ -235,31 +219,6 @@ def publish_status(status, job_id, **data):
         'Status': status,
         'Data': data or None,
     }))
-
-
-def build_job_id(input_device_id, input_lang, output_device_id, output_lang):
-    return '{unique_id}.{input_device_id}.{input_lang}.{output_device_id}.{output_lang}'.format(
-        unique_id=str(uuid.uuid4()),
-        input_device_id=input_device_id,
-        input_lang=input_lang,
-        output_device_id=output_device_id,
-        output_lang=output_lang,
-    )
-
-
-def extract_input_output_lang_from_job_id(job_id):
-    parts = job_id.split('.')
-    input_lang = parts[2]
-    output_lang = parts[4]
-
-    return input_lang, output_lang
-
-
-def extract_output_device_from_job_id(job_id):
-    parts = job_id.split('.')
-    output_device_id = parts[3]
-
-    return output_device_id
 
 
 def get_pipeline_config():
