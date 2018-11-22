@@ -51,9 +51,8 @@ class GcpTextToSpeech(object):
         s3object.put(Body=response.audio_content)
 
 
-def text_to_speech(text, bucketname, job_id):
+def text_to_speech(text, output_bucket, job_id):
     pipeline_config = get_pipeline_config()
     text_to_speech_mode = pipeline_config.get('TextToSpeechMode', 'aws')
     text_to_speech_class = AwsTextToSpeech if text_to_speech_mode == 'aws' else GcpTextToSpeech
-    output_bucket = boto3.resource('s3').Bucket(bucketname)
     text_to_speech_class().run(text=text, output_bucket=output_bucket, job_id=job_id)

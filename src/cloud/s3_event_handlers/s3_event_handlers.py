@@ -1,11 +1,9 @@
 import json
-import os
 
 import boto3
-from google.cloud import speech
-from google.cloud.speech import enums, types
 
-from talko_lingo.utils.config import get_device_languages, get_pipeline_config
+from talko_lingo.utils.speech_to_text import speech_to_text
+from talko_lingo.utils.config import get_device_languages
 from talko_lingo.utils.job_id import build_job_id, extract_output_device_from_job_id
 from talko_lingo.utils.messaging import publish_status
 from talko_lingo.utils.text_to_speech import text_to_speech
@@ -43,66 +41,23 @@ def handle_new_audio_file(bucketname, key):
 
     job_id = build_job_id(input_device_id, input_lang, output_device_id, output_lang)
 
+    input_s3object = boto3.resource('s3').Object(bucketname, key)
+
     publish_status('Transcribing', job_id=job_id)
+    text_to_translate, async = speech_to_text(input_s3object, input_lang, job_id)
 
-    pipeline_config = get_pipeline_config()
-    transcribe_mode = pipeline_config.get('TranscribeMode', 'aws')
+    if text_to_translate is not None and async is False:
+        on_transcribing_done(text_to_translate, output_bucket=boto3.resource('s3').Bucket(bucketname), job_id=job_id)
+    elif text_to_translate is None:
+        publish_status('Error', job_id=job_id, ErrorCause='speech-to-text')
 
-    if transcribe_mode == 'aws':
-        if input_lang == 'en-US':
-            lambda_client = boto3.client('lambda')
 
-            response = lambda_client.invoke(
-                FunctionName=os.environ['ENGLISH_TRANSCRIBE_STREAMING_LAMBDA_FUNCTION_NAME'],
-                InvocationType='RequestResponse',
-                Payload=json.dumps({
-                    "bucketName": bucketname,
-                    "objectKey": key,
-                }),
-            )
+def on_transcribing_done(text_to_translate, output_bucket, job_id):
+    publish_status('Translating', job_id=job_id, TextToTranslate=text_to_translate)
+    translated_text = translate(text_to_translate, job_id=job_id)
 
-            text_to_translate = response['Payload'].read().decode('utf-8')
-            print(text_to_translate)
-            publish_status('Translating', job_id=job_id, TextToTranslate=text_to_translate)
-            translated_text = translate(text_to_translate, job_id=job_id)
-            publish_status('Pollying', job_id=job_id, TextToPolly=translated_text)
-            text_to_speech(translated_text, bucketname, job_id=job_id)
-        else:
-            transcribe_client = boto3.client('transcribe')
-            response = transcribe_client.start_transcription_job(
-                TranscriptionJobName=job_id,
-                LanguageCode=input_lang,
-                MediaFormat=os.path.splitext(key)[1][1:],
-                Media={
-                    'MediaFileUri': 'https://s3.amazonaws.com/{}/{}'.format(bucketname, key)
-                },
-                OutputBucketName=bucketname
-            )
-            print(response)
-
-    else:
-        client = speech.SpeechClient()
-
-        content = boto3.client('s3').get_object(Bucket=bucketname, Key=key)['Body'].read()
-        audio = types.RecognitionAudio(content=content)
-
-        config = types.RecognitionConfig(
-            encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
-            sample_rate_hertz=44100,
-            language_code=input_lang
-        )
-
-        response = client.recognize(config, audio)
-
-        print(response)
-        if response.results:
-            text_to_translate = response.results[0].alternatives[0].transcript
-            publish_status('Translating', job_id=job_id, TextToTranslate=text_to_translate)
-            translated_text = translate(text_to_translate, job_id)
-            publish_status('Pollying', job_id=job_id, TextToPolly=translated_text)
-            text_to_speech(translated_text, bucketname, job_id=job_id)
-        else:
-            publish_status('Error', job_id=job_id, ErrorCause='speech-to-text')
+    publish_status('Pollying', job_id=job_id, TextToPolly=translated_text)
+    text_to_speech(translated_text, output_bucket=output_bucket, job_id=job_id)
 
 
 def handle_polly_generated_file(bucketname, key, job_id):
@@ -141,8 +96,5 @@ def handle_transcribe_event(event):
 
     content = json.loads(boto3.client('s3').get_object(Bucket=bucketname, Key=key)['Body'].read())
     text_to_translate = content['results']['transcripts'][0]['transcript']
-
-    publish_status('Translating', job_id=job_id, TextToTranslate=text_to_translate)
-    translated_text = translate(text_to_translate, job_id=job_id)
-    publish_status('Pollying', job_id=job_id, TextToPolly=translated_text)
-    text_to_speech(translated_text, bucketname, job_id=job_id)
+    on_transcribing_done(text_to_translate=text_to_translate, output_bucket=boto3.resource('s3').Bucket(bucketname),
+                         job_id=job_id)
