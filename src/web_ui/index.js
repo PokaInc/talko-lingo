@@ -88,6 +88,12 @@ const onMessage = (topic, message) => {
     window.setTimeout(() => {
       removeRow(row);
     }, 10000);
+  } else if (status === 'Error') {
+    let row = getOrCreateRow(message.JobId);
+    markRowAsError(row);
+    window.setTimeout(() => {
+      removeRow(row);
+    }, 10000);
   }
 };
 
@@ -189,6 +195,10 @@ const getOrCreateRow = (rowId) => {
   }
 
   return row;
+};
+
+const markRowAsError = (row) => {
+  row.classList.add('error');
 };
 
 
