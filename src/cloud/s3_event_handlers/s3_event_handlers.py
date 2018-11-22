@@ -202,14 +202,6 @@ def text_to_speech(text, bucketname, job_id):
         key = 'output/{}/{}.mp3'.format(job_id, str(uuid.uuid4()))
         s3object = s3.Object(bucketname, key)
         s3object.put(Body=response.audio_content)
-        publish_status('Publishing', job_id=job_id)
-        iot_client = boto3.client('iot-data')
-        print(iot_client.publish(
-            topic='talko/rx/' + extract_output_device_from_job_id(job_id),
-            payload=json.dumps({
-                'AudioFileUrl': build_presigned_url(boto3.client('s3'), bucketname, key)
-            }).encode('utf-8')
-        ))
 
 
 def publish_status(status, job_id, **data):
