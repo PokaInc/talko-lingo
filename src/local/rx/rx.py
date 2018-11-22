@@ -27,9 +27,9 @@ mqttc.on_connect = on_connect
 mqttc.on_message = on_message
 
 mqttc.tls_set(
-    os.environ['AMAZON_ROOT_CA'],
-    certfile=os.environ['CRT'],
-    keyfile=os.environ['PRIVATE_KEY'],
+    os.path.join(os.environ['CONFIG_DIR'], os.environ['AMAZON_ROOT_CA']),
+    certfile=os.path.join(os.environ['CONFIG_DIR'], os.environ['CRT']),
+    keyfile=os.path.join(os.environ['CONFIG_DIR'], os.environ['PRIVATE_KEY']),
     cert_reqs=ssl.CERT_REQUIRED,
     tls_version=ssl.PROTOCOL_TLSv1_2,
     ciphers=None

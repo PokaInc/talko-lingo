@@ -67,7 +67,7 @@ update-website:
 	@aws s3 sync website/ s3://www.$(DOMAIN_NAME) --exclude "*/.DS_Store"
 
 install-raspberry-pi-service:
-	@sudo systemctl enable $(pwd)/tx.service
-	@sudo systemctl enable $(pwd)/rx.service
+	@sudo systemctl enable $(shell pwd)/tx.service
+	@sudo systemctl enable $(shell pwd)/rx.service
 	@sudo systemctl start tx.service
 	@sudo systemctl start rx.service
