@@ -6,7 +6,7 @@ from talko_lingo.utils.config import get_pipeline_config
 from talko_lingo.utils.job_id import extract_input_output_lang_from_job_id
 
 
-class AwsSpeechToText(object):
+class AwsTextToSpeech(object):
     def run(self, text, output_bucket, job_id):
         _, output_lang = extract_input_output_lang_from_job_id(job_id)
         voices = {
@@ -54,6 +54,6 @@ class GcpTextToSpeech(object):
 def text_to_speech(text, bucketname, job_id):
     pipeline_config = get_pipeline_config()
     text_to_speech_mode = pipeline_config.get('TextToSpeechMode', 'aws')
-    text_to_speech_class = AwsSpeechToText if text_to_speech_mode == 'aws' else GcpTextToSpeech
+    text_to_speech_class = AwsTextToSpeech if text_to_speech_mode == 'aws' else GcpTextToSpeech
     output_bucket = boto3.resource('s3').Bucket(bucketname)
     text_to_speech_class().run(text=text, output_bucket=output_bucket, job_id=job_id)
