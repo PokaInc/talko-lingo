@@ -17,7 +17,6 @@ def lambda_handler(event, _):
     if event.get('source') == 'aws.transcribe':
         handle_transcribe_event(event)
     else:
-        s3_client = boto3.client('s3')
         records = event['Records']
         for record in records:
             message = json.loads(record['Sns']['Message'])
@@ -31,7 +30,7 @@ def lambda_handler(event, _):
                     handle_new_audio_file(bucketname, key)
                 if key.startswith('output/'):
                     job_id = key.partition('output/')[2].partition('/')[0]
-                    handle_polly_generated_file(s3_client, bucketname, key, job_id=job_id)
+                    handle_polly_generated_file(bucketname, key, job_id=job_id)
 
 
 def handle_new_audio_file(bucketname, key):
@@ -104,8 +103,10 @@ def handle_new_audio_file(bucketname, key):
             publish_status('Error', job_id=job_id, ErrorCause='speech-to-text')
 
 
-def build_presigned_url(s3_client, bucketname, key):
-    return s3_client.generate_presigned_url(
+def handle_polly_generated_file(bucketname, key, job_id):
+    publish_status('Publishing', job_id=job_id)
+    iot_client = boto3.client('iot-data')
+    presigned_url = boto3.client('s3').generate_presigned_url(
         ClientMethod='get_object',
         ExpiresIn=900,
         Params={
@@ -113,15 +114,10 @@ def build_presigned_url(s3_client, bucketname, key):
             'Key': key,
         }
     )
-
-
-def handle_polly_generated_file(s3_client, bucketname, key, job_id):
-    publish_status('Publishing', job_id=job_id)
-    iot_client = boto3.client('iot-data')
     print(iot_client.publish(
         topic='talko/rx/' + extract_output_device_from_job_id(job_id),
         payload=json.dumps({
-            'AudioFileUrl': build_presigned_url(s3_client, bucketname, key)
+            'AudioFileUrl': presigned_url
         }).encode('utf-8')
     ))
 
