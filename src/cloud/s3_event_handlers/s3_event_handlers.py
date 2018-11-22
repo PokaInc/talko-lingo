@@ -1,14 +1,13 @@
 import json
 import os
-import uuid
 
 import boto3
-from google.cloud import speech, texttospeech
+from google.cloud import speech
 from google.cloud.speech import enums, types
 
 from talko_lingo.utils.config import get_device_languages, get_pipeline_config
-from talko_lingo.utils.job_id import build_job_id, extract_output_device_from_job_id, \
-    extract_input_output_lang_from_job_id
+from talko_lingo.utils.job_id import build_job_id, extract_output_device_from_job_id
+from talko_lingo.utils.text_to_speech import text_to_speech
 from talko_lingo.utils.translate import translate
 
 
@@ -64,7 +63,8 @@ def handle_new_audio_file(bucketname, key):
             text_to_translate = response['Payload'].read().decode('utf-8')
             print(text_to_translate)
             publish_status('Translating', job_id=job_id, TextToTranslate=text_to_translate)
-            translated_text = translate(text_to_translate, bucketname, job_id=job_id)
+            translated_text = translate(text_to_translate, job_id=job_id)
+            publish_status('Pollying', job_id=job_id, TextToPolly=translated_text)
             text_to_speech(translated_text, bucketname, job_id=job_id)
         else:
             transcribe_client = boto3.client('transcribe')
@@ -98,6 +98,7 @@ def handle_new_audio_file(bucketname, key):
             text_to_translate = response.results[0].alternatives[0].transcript
             publish_status('Translating', job_id=job_id, TextToTranslate=text_to_translate)
             translated_text = translate(text_to_translate, job_id)
+            publish_status('Pollying', job_id=job_id, TextToPolly=translated_text)
             text_to_speech(translated_text, bucketname, job_id=job_id)
         else:
             publish_status('Error', job_id=job_id, ErrorCause='speech-to-text')
@@ -142,54 +143,8 @@ def handle_transcribe_event(event):
 
     publish_status('Translating', job_id=job_id, TextToTranslate=text_to_translate)
     translated_text = translate(text_to_translate, job_id=job_id)
+    publish_status('Pollying', job_id=job_id, TextToPolly=translated_text)
     text_to_speech(translated_text, bucketname, job_id=job_id)
-
-
-def text_to_speech(text, bucketname, job_id):
-    pipeline_config = get_pipeline_config()
-
-    publish_status('Pollying', job_id=job_id, TextToPolly=text)
-
-    _, output_lang = extract_input_output_lang_from_job_id(job_id)
-
-    text_to_speech_mode = pipeline_config.get('TextToSpeechMode', 'aws')
-    if text_to_speech_mode == 'aws':
-        voices = {
-            'fr-CA': 'Chantal',
-            'en-AU': 'Nicole',
-            'en-US': 'Joanna',
-            'en-GB': 'Emma',
-            'es-US': 'Penelope',
-        }
-
-        polly_client = boto3.client('polly')
-        print(polly_client.start_speech_synthesis_task(
-            OutputFormat='mp3',
-            OutputS3BucketName=bucketname,
-            OutputS3KeyPrefix='output/{}/'.format(job_id),
-            Text=text,
-            VoiceId=voices[output_lang],
-            LanguageCode=output_lang
-        ))
-    else:
-        client = texttospeech.TextToSpeechClient()
-        synthesis_input = texttospeech.types.SynthesisInput(text=text)
-
-        voice = texttospeech.types.VoiceSelectionParams(
-            language_code=output_lang,
-            ssml_gender=texttospeech.enums.SsmlVoiceGender.FEMALE,
-        )
-
-        audio_config = texttospeech.types.AudioConfig(
-            audio_encoding=texttospeech.enums.AudioEncoding.MP3,
-        )
-
-        response = client.synthesize_speech(synthesis_input, voice, audio_config)
-
-        s3 = boto3.resource('s3')
-        key = 'output/{}/{}.mp3'.format(job_id, str(uuid.uuid4()))
-        s3object = s3.Object(bucketname, key)
-        s3object.put(Body=response.audio_content)
 
 
 def publish_status(status, job_id, **data):
