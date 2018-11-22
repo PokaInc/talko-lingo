@@ -38,12 +38,13 @@ function SetupDeviceCredentials {
     CONFIGURATION=${TMP_FOLDER}/environment
 
     echo "--------------------------------------------------------"
-    echo "Execute the following on device $1 terminal:"
+    echo "Execute the following on device $1 terminal: "
 
     cat << EOF > ${CONFIGURATION}
 export DEVICE_ID=device_$(echo $1 | awk '{print tolower($0)}')
 export AWS_ACCESS_KEY_ID=${ACCESS_KEY_ID}
 export AWS_SECRET_ACCESS_KEY=${SECRET_ACCESS_KEY}
+export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-`aws configure get region`}
 export IOT_ENDPOINT=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS --query endpointAddress --output text)
 export IOT_ENDPOINT_PORT=8883
 export THING_NAME=${THING_NAME}
@@ -56,16 +57,18 @@ EOF
 
     KEY=s3://${CONFIGURATION_BUCKET}/config.zip
     aws s3 cp ${TMP_FOLDER}/config.zip ${KEY} > /dev/null
-    URL=$(aws s3 presign ${KEY})
+    URL=$(aws s3 presign --expires-in 900 ${KEY})
     echo "wget \"${URL}\" -O config.zip && unzip config.zip -d /home/pi/talko-lingo/.config && rm config.zip"
 
-    echo "--------------------------------------------------------"
+    echo "-----------(Link will expire in 15 minutes)-------------"
 
     rm ${TMP_FOLDER}/*
 }
 
+echo "Generating credentials for device A..."
 SetupDeviceCredentials A
 
 read -p "Press enter to continue"
 
-#UploadConfig DeviceB device_b
+echo "Generating credentials for device B..."
+SetupDeviceCredentials B
