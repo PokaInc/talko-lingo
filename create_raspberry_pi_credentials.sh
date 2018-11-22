@@ -9,15 +9,18 @@ TALKO_LINGO_STACK_NAME=$3
 
 function SetupDeviceCredentials {
     DEVICE_STACK_NAME=${STACK_NAME}-$1
-    
+    DEVICE_ID=device_$(echo $1 | awk '{print tolower($0)}')
+
     TMP_FOLDER=$(mktemp -d /tmp/XXXXXX)
 
-    PRIVATE_KEY=${TMP_FOLDER}/iot-device-$1.key
-    CSR=${TMP_FOLDER}/iot-device-$1.csr
+    PRIVATE_KEY=${TMP_FOLDER}/${DEVICE_ID}.key
+    CSR=${TMP_FOLDER}/${DEVICE_ID}.csr
     openssl genrsa -out ${PRIVATE_KEY} 2048
     openssl req -new -sha256 -subj "/C=US/ST=./L=./O=./CN=." -key ${PRIVATE_KEY} -out ${CSR}
 
-    aws cloudformation deploy --template-file ${TEMPLATE_FILE} --stack-name ${DEVICE_STACK_NAME} --parameter-overrides Csr="$(cat ${CSR})" --capabilities CAPABILITY_IAM
+    aws cloudformation deploy --template-file ${TEMPLATE_FILE} --stack-name ${DEVICE_STACK_NAME} --parameter-overrides DeviceId=${DEVICE_ID} Csr="$(cat ${CSR})" --capabilities CAPABILITY_IAM
+    rm ${CSR}
+
     CONFIGURATION_BUCKET=$(aws cloudformation describe-stacks --stack-name ${DEVICE_STACK_NAME} --query "Stacks[0].Outputs[?OutputKey=='ConfigurationBucket'].OutputValue" --output text)
 
     ACCESS_KEY_ID=$(aws cloudformation describe-stacks --stack-name ${DEVICE_STACK_NAME} --query "Stacks[0].Outputs[?OutputKey=='AccessKeyId'].OutputValue" --output text)
@@ -28,11 +31,11 @@ function SetupDeviceCredentials {
 
     AUDIO_FILE_STORE=$(aws cloudformation describe-stacks --stack-name ${TALKO_LINGO_STACK_NAME} --query "Stacks[0].Outputs[?OutputKey=='AudioFileStore'].OutputValue" --output text)
 
-    CRT=${TMP_FOLDER}/iot-device-$1.crt
+    CRT=${TMP_FOLDER}/${DEVICE_ID}.crt
     aws iot describe-certificate --certificate-id ${IOT_CERTIFICATE_ID} --query 'certificateDescription.certificatePem' --output text > ${CRT}
 
     AMAZON_ROOT_CA=${TMP_FOLDER}/AmazonRootCA1.pem
-    wget https://www.amazontrust.com/repository/AmazonRootCA1.pem -O ${AMAZON_ROOT_CA}
+    wget --quiet https://www.amazontrust.com/repository/AmazonRootCA1.pem -O ${AMAZON_ROOT_CA}
 
     CONFIGURATION=${TMP_FOLDER}/environment
 
@@ -40,7 +43,7 @@ function SetupDeviceCredentials {
     echo "Execute the following on device $1 terminal: "
 
     cat << EOF > ${CONFIGURATION}
-DEVICE_ID=device_$(echo $1 | awk '{print tolower($0)}')
+DEVICE_ID=${DEVICE_ID}
 AWS_ACCESS_KEY_ID=${ACCESS_KEY_ID}
 AWS_SECRET_ACCESS_KEY=${SECRET_ACCESS_KEY}
 AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-`aws configure get region`}
@@ -48,12 +51,12 @@ IOT_ENDPOINT=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS --query en
 IOT_ENDPOINT_PORT=8883
 AUDIO_FILE_STORE=${AUDIO_FILE_STORE}
 AMAZON_ROOT_CA=AmazonRootCA1.pem
-PRIVATE_KEY=iot-device-$1.key
-CRT=iot-device-$1.crt
+PRIVATE_KEY=${DEVICE_ID}.key
+CRT=${DEVICE_ID}.crt
 EOF
 
-    pushd ${TMP_FOLDER}
-    zip config.zip *
+    pushd ${TMP_FOLDER} > /dev/null
+    zip config.zip * > /dev/null
     popd
 
     KEY=s3://${CONFIGURATION_BUCKET}/config.zip
