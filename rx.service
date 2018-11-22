@@ -9,6 +9,7 @@ Environment=CONFIG_DIR=/home/pi/talko-lingo/.config/
 WorkingDirectory=/home/pi/talko-lingo/src/local/
 ExecStartPre=/bin/bash -c "mpg321 /home/pi/talko-lingo/sounds/start.mp3"
 ExecStart=/usr/bin/python -u -m rx.rx
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
