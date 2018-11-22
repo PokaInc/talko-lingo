@@ -101,6 +101,7 @@ def handle_new_audio_file(bucketname, key):
         )
 
         response = client.recognize(config, audio)
+        print(response)
         text_to_translate = response.results[0].alternatives[0].transcript
         translate(text_to_translate, bucketname, job_id)
 
