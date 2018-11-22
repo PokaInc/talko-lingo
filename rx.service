@@ -7,8 +7,9 @@ User=pi
 EnvironmentFile=/home/pi/talko-lingo/.config/environment
 Environment=CONFIG_DIR=/home/pi/talko-lingo/.config/
 WorkingDirectory=/home/pi/talko-lingo/src/local/
+ExecStartPre=/bin/bash -c "amixer sset PCM 80%"
 ExecStartPre=/usr/bin/mpg321 /home/pi/talko-lingo/start.mp3
-ExecStart=/bin/bash -c "amixer sset PCM 80% && python -u -m rx.rx"
+ExecStart=/usr/bin/python -u -m rx.rx
 
 [Install]
 WantedBy=multi-user.target
