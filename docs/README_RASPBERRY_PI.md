@@ -45,7 +45,7 @@ required for the LED display and possibly the speaker bonnet.
 In the terminal run the following commands:
 ```
 sudo apt-get update
-sudo apt-get install build-essential python-dev python-pip python-smbus python-imaging git libportaudio2 portaudio19-dev libsndfile1 libffi-dev 
+sudo apt-get install -y build-essential python-dev python-pip python-smbus python-imaging git libportaudio2 portaudio19-dev libsndfile1 libffi-dev mpg321
 ```
 
 There's special dependency that needs to be installed for the LED alphanumerical display to work.
