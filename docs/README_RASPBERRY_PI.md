@@ -66,6 +66,10 @@ In the pi's home directory (`/home/pi`) clone the project:
 ```
 git clone https://github.com/PokaInc/talko-lingo.git
 ```
+cd in the project folder for the next part:
+```
+cd talko-lingo
+```
 
 Install python requirements (be patient it takes a few minutes):
 ```

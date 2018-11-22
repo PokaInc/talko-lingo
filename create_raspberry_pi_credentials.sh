@@ -39,9 +39,6 @@ function SetupDeviceCredentials {
 
     CONFIGURATION=${TMP_FOLDER}/environment
 
-    echo "--------------------------------------------------------"
-    echo "Execute the following on device $1 terminal: "
-
     cat << EOF > ${CONFIGURATION}
 DEVICE_ID=${DEVICE_ID}
 AWS_ACCESS_KEY_ID=${ACCESS_KEY_ID}
@@ -57,13 +54,15 @@ EOF
 
     pushd ${TMP_FOLDER} > /dev/null
     zip config.zip * > /dev/null
-    popd
+    popd > /dev/null
 
     KEY=s3://${CONFIGURATION_BUCKET}/config.zip
     aws s3 cp ${TMP_FOLDER}/config.zip ${KEY} > /dev/null
     URL=$(aws s3 presign --expires-in 900 ${KEY})
-    echo "wget \"${URL}\" -O config.zip && unzip config.zip -d /home/pi/talko-lingo/.config && rm config.zip"
 
+    echo "--------------------------------------------------------"
+    echo "Execute the following on device $1 terminal: "
+    echo "wget \"${URL}\" -O config.zip && unzip config.zip -d /home/pi/talko-lingo/.config && rm config.zip"
     echo "-----------(Link will expire in 15 minutes)-------------"
 
     rm ${TMP_FOLDER}/*
