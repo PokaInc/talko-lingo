@@ -1,5 +1,5 @@
 [Unit]
-After=rx.service
+After=multi-user.target
 
 [Service]
 User=pi
