@@ -1,13 +1,12 @@
 import json
-import os
-import uuid
 
 import boto3
-from google.cloud import speech, texttospeech
-from google.cloud.speech import enums, types
 
-from talko_lingo.utils.job_id import build_job_id, extract_output_device_from_job_id, \
-    extract_input_output_lang_from_job_id
+from talko_lingo.utils.speech_to_text import speech_to_text
+from talko_lingo.utils.config import get_device_languages
+from talko_lingo.utils.job_id import build_job_id, extract_output_device_from_job_id
+from talko_lingo.utils.messaging import publish_status
+from talko_lingo.utils.text_to_speech import text_to_speech
 from talko_lingo.utils.translate import translate
 
 
@@ -16,7 +15,6 @@ def lambda_handler(event, _):
     if event.get('source') == 'aws.transcribe':
         handle_transcribe_event(event)
     else:
-        s3_client = boto3.client('s3')
         records = event['Records']
         for record in records:
             message = json.loads(record['Sns']['Message'])
@@ -30,20 +28,7 @@ def lambda_handler(event, _):
                     handle_new_audio_file(bucketname, key)
                 if key.startswith('output/'):
                     job_id = key.partition('output/')[2].partition('/')[0]
-                    handle_polly_generated_file(s3_client, bucketname, key, job_id=job_id)
-
-
-def get_device_languages():
-    dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table(os.environ['DEVICE_CONFIG_TABLE_NAME'])
-    items = table.scan()['Items']
-    device_a_config = next(filter(lambda item: item['DeviceId'] == 'device_a', items))
-    device_b_config = next(filter(lambda item: item['DeviceId'] == 'device_b', items))
-
-    return {
-        'device_a': device_a_config['Lang'],
-        'device_b': device_b_config['Lang'],
-    }
+                    handle_polly_generated_file(bucketname, key, job_id=job_id)
 
 
 def handle_new_audio_file(bucketname, key):
@@ -56,64 +41,29 @@ def handle_new_audio_file(bucketname, key):
 
     job_id = build_job_id(input_device_id, input_lang, output_device_id, output_lang)
 
+    input_s3object = boto3.resource('s3').Object(bucketname, key)
+
     publish_status('Transcribing', job_id=job_id)
+    text_to_translate, async = speech_to_text(input_s3object, input_lang, job_id)
 
-    pipeline_config = get_pipeline_config()
-    transcribe_mode = pipeline_config.get('TranscribeMode', 'aws')
-
-    if transcribe_mode == 'aws':
-        if input_lang == 'en-US':
-            lambda_client = boto3.client('lambda')
-
-            response = lambda_client.invoke(
-                FunctionName=os.environ['ENGLISH_TRANSCRIBE_STREAMING_LAMBDA_FUNCTION_NAME'],
-                InvocationType='RequestResponse',
-                Payload=json.dumps({
-                    "bucketName": bucketname,
-                    "objectKey": key,
-                }),
-            )
-
-            text_to_translate = response['Payload'].read().decode('utf-8')
-            print(text_to_translate)
-            publish_status('Translating', job_id=job_id, TextToTranslate=text_to_translate)
-            translated_text = translate(text_to_translate, bucketname, job_id=job_id)
-            text_to_speech(translated_text, bucketname, job_id=job_id)
-        else:
-            transcribe_client = boto3.client('transcribe')
-            response = transcribe_client.start_transcription_job(
-                TranscriptionJobName=job_id,
-                LanguageCode=input_lang,
-                MediaFormat=os.path.splitext(key)[1][1:],
-                Media={
-                    'MediaFileUri': 'https://s3.amazonaws.com/{}/{}'.format(bucketname, key)
-                },
-                OutputBucketName=bucketname
-            )
-            print(response)
-
-    else:
-        client = speech.SpeechClient()
-
-        content = boto3.client('s3').get_object(Bucket=bucketname, Key=key)['Body'].read()
-        audio = types.RecognitionAudio(content=content)
-
-        config = types.RecognitionConfig(
-            encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
-            sample_rate_hertz=44100,
-            language_code=input_lang
-        )
-
-        response = client.recognize(config, audio)
-        print(response)
-        text_to_translate = response.results[0].alternatives[0].transcript
-        publish_status('Translating', job_id=job_id, TextToTranslate=text_to_translate)
-        translated_text = translate(text_to_translate, job_id)
-        text_to_speech(translated_text, bucketname, job_id=job_id)
+    if text_to_translate is not None and async is False:
+        on_transcribing_done(text_to_translate, output_bucket=boto3.resource('s3').Bucket(bucketname), job_id=job_id)
+    elif text_to_translate is None:
+        publish_status('Error', job_id=job_id, ErrorCause='speech-to-text')
 
 
-def build_presigned_url(s3_client, bucketname, key):
-    return s3_client.generate_presigned_url(
+def on_transcribing_done(text_to_translate, output_bucket, job_id):
+    publish_status('Translating', job_id=job_id, TextToTranslate=text_to_translate)
+    translated_text = translate(text_to_translate, job_id=job_id)
+
+    publish_status('Pollying', job_id=job_id, TextToPolly=translated_text)
+    text_to_speech(translated_text, output_bucket=output_bucket, job_id=job_id)
+
+
+def handle_polly_generated_file(bucketname, key, job_id):
+    publish_status('Publishing', job_id=job_id)
+    iot_client = boto3.client('iot-data')
+    presigned_url = boto3.client('s3').generate_presigned_url(
         ClientMethod='get_object',
         ExpiresIn=900,
         Params={
@@ -121,15 +71,10 @@ def build_presigned_url(s3_client, bucketname, key):
             'Key': key,
         }
     )
-
-
-def handle_polly_generated_file(s3_client, bucketname, key, job_id):
-    publish_status('Publishing', job_id=job_id)
-    iot_client = boto3.client('iot-data')
     print(iot_client.publish(
         topic='talko/rx/' + extract_output_device_from_job_id(job_id),
         payload=json.dumps({
-            'AudioFileUrl': build_presigned_url(s3_client, bucketname, key)
+            'AudioFileUrl': presigned_url
         }).encode('utf-8')
     ))
 
@@ -151,79 +96,5 @@ def handle_transcribe_event(event):
 
     content = json.loads(boto3.client('s3').get_object(Bucket=bucketname, Key=key)['Body'].read())
     text_to_translate = content['results']['transcripts'][0]['transcript']
-
-    publish_status('Translating', job_id=job_id, TextToTranslate=text_to_translate)
-    translated_text = translate(text_to_translate, job_id=job_id)
-    text_to_speech(translated_text, bucketname, job_id=job_id)
-
-
-def text_to_speech(text, bucketname, job_id):
-    pipeline_config = get_pipeline_config()
-
-    publish_status('Pollying', job_id=job_id, TextToPolly=text)
-
-    _, output_lang = extract_input_output_lang_from_job_id(job_id)
-
-    text_to_speech_mode = pipeline_config.get('TextToSpeechMode', 'aws')
-    if text_to_speech_mode == 'aws':
-        voices = {
-            'fr-CA': 'Chantal',
-            'en-AU': 'Nicole',
-            'en-US': 'Joanna',
-            'en-GB': 'Emma',
-            'es-US': 'Penelope',
-        }
-
-        polly_client = boto3.client('polly')
-        print(polly_client.start_speech_synthesis_task(
-            OutputFormat='mp3',
-            OutputS3BucketName=bucketname,
-            OutputS3KeyPrefix='output/{}/'.format(job_id),
-            Text=text,
-            VoiceId=voices[output_lang],
-            LanguageCode=output_lang
-        ))
-    else:
-        client = texttospeech.TextToSpeechClient()
-        synthesis_input = texttospeech.types.SynthesisInput(text=text)
-
-        voice = texttospeech.types.VoiceSelectionParams(
-            language_code=output_lang,
-            ssml_gender=texttospeech.enums.SsmlVoiceGender.FEMALE,
-        )
-
-        audio_config = texttospeech.types.AudioConfig(
-            audio_encoding=texttospeech.enums.AudioEncoding.MP3,
-        )
-
-        response = client.synthesize_speech(synthesis_input, voice, audio_config)
-
-        s3 = boto3.resource('s3')
-        key = 'output/{}/{}.mp3'.format(job_id, str(uuid.uuid4()))
-        s3object = s3.Object(bucketname, key)
-        s3object.put(Body=response.audio_content)
-        publish_status('Publishing', job_id=job_id)
-        iot_client = boto3.client('iot-data')
-        print(iot_client.publish(
-            topic='talko/rx/' + extract_output_device_from_job_id(job_id),
-            payload=json.dumps({
-                'AudioFileUrl': build_presigned_url(boto3.client('s3'), bucketname, key)
-            }).encode('utf-8')
-        ))
-
-
-def publish_status(status, job_id, **data):
-    iot = boto3.client('iot-data')
-    iot.publish(topic='talko/job_status', payload=json.dumps({
-        'JobId': job_id,
-        'Status': status,
-        'Data': data or None,
-    }))
-
-
-def get_pipeline_config():
-    dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table(os.environ['PIPELINE_CONFIG_TABLE_NAME'])
-    items = table.scan()['Items']
-
-    return {item['ParameterName']: item['ParameterValue'] for item in items}
+    on_transcribing_done(text_to_translate=text_to_translate, output_bucket=boto3.resource('s3').Bucket(bucketname),
+                         job_id=job_id)
