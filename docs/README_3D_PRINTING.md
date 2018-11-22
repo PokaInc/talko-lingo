@@ -72,5 +72,3 @@ Finally, you can put the soldered Speaker Bonnet on the GPIO pins, and cross you
 ![WithBonnet](./img/withbonnet.jpg "With Pi")
 
 Rinse and repeat to make the second Talko-Lingo device in order to start making new friends from all around the world!
-
-![Test](../3d-printing/bottom_shell.stl "Test")

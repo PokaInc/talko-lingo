@@ -140,12 +140,12 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: sns.amazonaws.com
 
-  LocalLambdas:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: local-lambdas.yml
-      Parameters:
-        AudioFileStore: !Ref AudioFileStore
+  # LocalLambdas:
+  #   Type: AWS::CloudFormation::Stack
+  #   Properties:
+  #     TemplateURL: local-lambdas.yml
+  #     Parameters:
+  #       AudioFileStore: !Ref AudioFileStore
 
   TranscribeRule:
     Type: AWS::Events::Rule
@@ -335,11 +335,11 @@ Resources:
           Resource: !Sub 'arn:aws:s3:::${WebUiBucket}/*'
 
 Outputs:
-  RxLambda:
-    Value: !GetAtt LocalLambdas.Outputs.RxLambda
-
-  TxLambda:
-    Value: !GetAtt LocalLambdas.Outputs.TxLambda
+  # RxLambda:
+  #   Value: !GetAtt LocalLambdas.Outputs.RxLambda
+  #
+  # TxLambda:
+  #   Value: !GetAtt LocalLambdas.Outputs.TxLambda
 
   WebsiteURL:
     Value: !GetAtt WebUiBucket.WebsiteURL
