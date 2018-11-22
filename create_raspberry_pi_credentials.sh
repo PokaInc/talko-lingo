@@ -27,7 +27,6 @@ function SetupDeviceCredentials {
     IOT_CERTIFICATE_ID=$(aws cloudformation describe-stacks --stack-name ${DEVICE_STACK_NAME} --query "Stacks[0].Outputs[?OutputKey=='IotCertificateId'].OutputValue" --output text)
 
     AUDIO_FILE_STORE=$(aws cloudformation describe-stacks --stack-name ${TALKO_LINGO_STACK_NAME} --query "Stacks[0].Outputs[?OutputKey=='AudioFileStore'].OutputValue" --output text)
-    THING_NAME=$(aws cloudformation describe-stacks --stack-name ${TALKO_LINGO_STACK_NAME} --query "Stacks[0].Outputs[?OutputKey=='ThingName'].OutputValue" --output text)
 
     CRT=${TMP_FOLDER}/iot-device-$1.crt
     aws iot describe-certificate --certificate-id ${IOT_CERTIFICATE_ID} --query 'certificateDescription.certificatePem' --output text > ${CRT}
@@ -47,7 +46,6 @@ AWS_SECRET_ACCESS_KEY=${SECRET_ACCESS_KEY}
 AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-`aws configure get region`}
 IOT_ENDPOINT=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS --query endpointAddress --output text)
 IOT_ENDPOINT_PORT=8883
-THING_NAME=${THING_NAME}
 AUDIO_FILE_STORE=${AUDIO_FILE_STORE}
 AMAZON_ROOT_CA=AmazonRootCA1.pem
 PRIVATE_KEY=iot-device-$1.key

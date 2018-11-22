@@ -156,13 +156,19 @@ def translate(text_to_translate, destination_bucket_name, job_id):
     input_lang = input_lang.split('-')[0]
     output_lang = output_lang.split('-')[0]
 
-    translate_client = boto3.client('translate')
-    translated_text = translate_client.translate_text(
-        Text=text_to_translate,
-        SourceLanguageCode=input_lang,
-        TargetLanguageCode=output_lang
-    )['TranslatedText']
-    print('Translated text: ' + translated_text)
+    print('Translating job ' + job_id)
+    if input_lang != output_lang:
+        translate_client = boto3.client('translate')
+        translated_text = translate_client.translate_text(
+            Text=text_to_translate,
+            SourceLanguageCode=input_lang,
+            TargetLanguageCode=output_lang
+        )['TranslatedText']
+        print('Translated text: ' + translated_text)
+    else:
+        translated_text = text_to_translate
+        print('Same input/output language, not translating')
+
     create_polly_job(translated_text, destination_bucket_name, job_id=job_id)
 
 
@@ -199,17 +205,17 @@ def publish_status(status, job_id):
 
 
 def build_job_id(input_device_id, input_lang, output_device_id, output_lang):
-    return '{unique_id}-{input_device_id}-{input_lang}-{output_device_id}-{ouput_lang}'.format(
+    return '{unique_id}.{input_device_id}.{input_lang}.{output_device_id}.{output_lang}'.format(
         unique_id=str(uuid.uuid4()),
         input_device_id=input_device_id,
         input_lang=input_lang,
         output_device_id=output_device_id,
-        ouput_lang=output_lang,
+        output_lang=output_lang,
     )
 
 
 def extract_input_output_lang_from_job_id(job_id):
-    parts = job_id.split('-')
+    parts = job_id.split('.')
     input_lang = parts[2]
     output_lang = parts[4]
 
@@ -217,7 +223,7 @@ def extract_input_output_lang_from_job_id(job_id):
 
 
 def extract_output_device_from_job_id(job_id):
-    parts = job_id.split('-')
+    parts = job_id.split('.')
     output_device_id = parts[3]
 
     return output_device_id

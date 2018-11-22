@@ -334,9 +334,6 @@ Resources:
           Action: s3:GetObject
           Resource: !Sub 'arn:aws:s3:::${WebUiBucket}/*'
 
-  Thing:
-    Type: AWS::IoT::Thing
-
 Outputs:
   AudioFileStore:
     Value: !Ref AudioFileStore
@@ -345,15 +342,6 @@ Outputs:
     Value: !GetAtt AudioFileStore.Arn
     Export:
       Name: AudioFileStoreArn
-
-  RxLambda:
-    Value: !GetAtt LocalLambdas.Outputs.RxLambda
-
-  TxLambda:
-    Value: !GetAtt LocalLambdas.Outputs.TxLambda
-
-  ThingName:
-    Value: !Ref Thing
 
   WebsiteURL:
     Value: !GetAtt WebUiBucket.WebsiteURL
