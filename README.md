@@ -26,3 +26,5 @@ and we encourage you to make you own version of these.
 4. [Case 3D Printing](README_3D_PRINTING.md)
 
 If all is going well, you should have a fully-functional Walkie-Talkie setup! As a bonus, you can tweak it to work over WiFi and communicate over hundreds of kilometers :-)
+
+And if you want to contribute, of course we accept PRs :-)
