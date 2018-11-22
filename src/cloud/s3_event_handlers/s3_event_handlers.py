@@ -6,6 +6,7 @@ import boto3
 from google.cloud import speech, texttospeech
 from google.cloud.speech import enums, types
 
+from talko_lingo.utils.config import get_device_languages, get_pipeline_config
 from talko_lingo.utils.job_id import build_job_id, extract_output_device_from_job_id, \
     extract_input_output_lang_from_job_id
 from talko_lingo.utils.translate import translate
@@ -31,19 +32,6 @@ def lambda_handler(event, _):
                 if key.startswith('output/'):
                     job_id = key.partition('output/')[2].partition('/')[0]
                     handle_polly_generated_file(s3_client, bucketname, key, job_id=job_id)
-
-
-def get_device_languages():
-    dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table(os.environ['DEVICE_CONFIG_TABLE_NAME'])
-    items = table.scan()['Items']
-    device_a_config = next(filter(lambda item: item['DeviceId'] == 'device_a', items))
-    device_b_config = next(filter(lambda item: item['DeviceId'] == 'device_b', items))
-
-    return {
-        'device_a': device_a_config['Lang'],
-        'device_b': device_b_config['Lang'],
-    }
 
 
 def handle_new_audio_file(bucketname, key):
@@ -215,11 +203,3 @@ def publish_status(status, job_id, **data):
         'Status': status,
         'Data': data or None,
     }))
-
-
-def get_pipeline_config():
-    dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table(os.environ['PIPELINE_CONFIG_TABLE_NAME'])
-    items = table.scan()['Items']
-
-    return {item['ParameterName']: item['ParameterValue'] for item in items}
