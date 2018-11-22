@@ -1,11 +1,11 @@
- [Unit]
- After=multi-user.target
+[Unit]
+After=rx.service
 
- [Service]
- User=pi
- EnvironmentFile=/home/pi/talko-lingo/.config/environment
- WorkingDirectory=/home/pi/talko-lingo/src/local/
- ExecStart=/usr/bin/python -m tx.tx
+[Service]
+User=pi
+EnvironmentFile=/home/pi/talko-lingo/.config/environment
+WorkingDirectory=/home/pi/talko-lingo/src/local/
+ExecStart=/usr/bin/python -u -m tx.tx
 
- [Install]
- WantedBy=multi-user.target
+[Install]
+WantedBy=multi-user.target

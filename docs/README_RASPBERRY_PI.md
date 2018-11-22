@@ -46,7 +46,7 @@ required for the LED display and possibly the speaker bonnet.
 In the terminal run the following commands:
 ```
 sudo apt-get update
-sudo apt-get install build-essential python-dev python-pip python-smbus python-imaging git libportaudio2 portaudio19-dev libsndfile1 libffi-dev
+sudo apt-get install -y build-essential python-dev python-pip python-smbus python-imaging git libportaudio2 portaudio19-dev libsndfile1 libffi-dev mpg321
 ```
 
 There is a special dependency that needs to be installed for the LED
@@ -113,6 +113,10 @@ topic.
 In the pi's home directory (`/home/pi`) clone the project:
 ```
 git clone https://github.com/PokaInc/talko-lingo.git
+```
+cd in the project folder for the next part:
+```
+cd talko-lingo
 ```
 
 Install python requirements (be patient it takes a few minutes):

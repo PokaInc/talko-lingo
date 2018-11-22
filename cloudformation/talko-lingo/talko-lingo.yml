@@ -49,6 +49,7 @@ Resources:
           ENGLISH_TRANSCRIBE_STREAMING_LAMBDA_FUNCTION_NAME: "EnglishTranscribeLambdaFunction"
           DEVICE_CONFIG_TABLE_NAME: !Ref DeviceConfigTable
           PIPELINE_CONFIG_TABLE_NAME: !Ref PipelineConfigTable
+          GOOGLE_APPLICATION_CREDENTIALS: "service_account.json"
 
   S3EventHandlerLambdaRole:
     Type: AWS::IAM::Role

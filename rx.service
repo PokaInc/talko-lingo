@@ -1,12 +1,14 @@
- [Unit]
- After=multi-user.target
+[Unit]
+After=audio.target
 
- [Service]
- User=pi
- EnvironmentFile=/home/pi/talko-lingo/.config/environment
- Environment=CONFIG_DIR=/home/pi/talko-lingo/.config/
- WorkingDirectory=/home/pi/talko-lingo/src/local/
- ExecStart=/usr/bin/python -m rx.rx
+[Service]
+Type=idle
+User=pi
+EnvironmentFile=/home/pi/talko-lingo/.config/environment
+Environment=CONFIG_DIR=/home/pi/talko-lingo/.config/
+WorkingDirectory=/home/pi/talko-lingo/src/local/
+ExecStartPre=/usr/bin/mpg321 /home/pi/talko-lingo/start.mp3
+ExecStart=/bin/bash -c "amixer sset PCM 80% && python -u -m rx.rx"
 
- [Install]
- WantedBy=multi-user.target
+[Install]
+WantedBy=multi-user.target

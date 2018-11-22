@@ -47,7 +47,7 @@ raspberry-pi-credentials:
 
 package-talko-lingo: check-bucket build_english_transcribe_function
 	@./package_local_lambdas.sh
-	docker run -v `pwd`/src/cloud/s3_event_handlers/:/dependencies/ python:3.6 pip install -t /dependencies/ google-cloud-speech
+	docker run -v `pwd`/src/cloud/s3_event_handlers/:/dependencies/ python:3.6 pip install --upgrade -t /dependencies/ google-cloud-speech google-cloud-texttospeech
 	@aws cloudformation package --template-file $(TALKO_LINGO_SOURCE_TEMPLATE_PATH) --s3-bucket $(BUCKET_NAME) --s3-prefix cloudformation/talkolingo --output-template-file $(GENERATED_TALKO_LINGO_TEMPLATE_ABSOLUTE_PATH)
 
 deploy-talko-lingo: package-talko-lingo
