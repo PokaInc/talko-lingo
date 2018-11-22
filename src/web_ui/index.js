@@ -78,10 +78,10 @@ const onMessage = (topic, message) => {
     activateColumn(row, 'transcribing');
   } else if (status === 'Translating') {
     let row = getOrCreateRow(message.JobId);
-    activateColumn(row, 'translating');
+    activateColumn(row, 'translating', "\"" + message.Data.TextToTranslate + "\"");
   } else if (status === 'Pollying') {
     let row = getOrCreateRow(message.JobId);
-    activateColumn(row, 'pollying');
+    activateColumn(row, 'pollying', "\"" + message.Data.TextToPolly + "\"");
   } else if (status === 'Publishing') {
     let row = getOrCreateRow(message.JobId);
     activateColumn(row, 'publishing');
@@ -119,13 +119,19 @@ const addProgressBarStripes = (elem) => {
   elem.classList.add("progress-bar-animated");
 };
 
-const activateColumn = (row, columnName) => {
+const activateColumn = (row, columnName, data) => {
   let columns = getRowColumns(row);
   columns.map((elem) => {
     removeProgressBarStripes(elem);
   });
 
   let elem = row.getElementsByClassName(columnName)[0];
+
+  if (data !== undefined) {
+    let dataElem = document.createElement('div');
+    dataElem.innerText = data;
+    elem.appendChild(dataElem);
+  }
 
   let columnIndex = columns.indexOf(elem);
   for (let i = 0; i <= columnIndex; i++) {
