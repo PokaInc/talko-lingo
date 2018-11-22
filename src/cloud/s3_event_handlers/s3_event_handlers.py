@@ -7,6 +7,7 @@ from google.cloud.speech import enums, types
 
 from talko_lingo.utils.config import get_device_languages, get_pipeline_config
 from talko_lingo.utils.job_id import build_job_id, extract_output_device_from_job_id
+from talko_lingo.utils.messaging import publish_status
 from talko_lingo.utils.text_to_speech import text_to_speech
 from talko_lingo.utils.translate import translate
 
@@ -145,12 +146,3 @@ def handle_transcribe_event(event):
     translated_text = translate(text_to_translate, job_id=job_id)
     publish_status('Pollying', job_id=job_id, TextToPolly=translated_text)
     text_to_speech(translated_text, bucketname, job_id=job_id)
-
-
-def publish_status(status, job_id, **data):
-    iot = boto3.client('iot-data')
-    iot.publish(topic='talko/job_status', payload=json.dumps({
-        'JobId': job_id,
-        'Status': status,
-        'Data': data or None,
-    }))
