@@ -70,10 +70,104 @@ will have to reboot the Pi for the changes to take effect.
 
 Then, for a clearer sound and to enable volume control, you should follow [these Adafruit instructions](https://learn.adafruit.com/adafruit-speaker-bonnet-for-raspberry-pi/i2s-tweaks) on the Pi:
 
-First, add this line to `/boot/config.txt`:
+First, add `dtoverlay=i2s-mmap` to the file `/boot/config.txt`:
 ```
+...
+# Enable audio (loads snd_bcm2835)
+#dtparam=audio=on
+dtoverlay=hifiberry-dac
 dtoverlay=i2s-mmap
 ```
+
+Then modify `/etc/asound.conf` so that it looks like this:
+
+```
+pcm.speakerbonnet {
+   type hw card 0
+}
+
+pcm.!default {
+   type plug
+   slave.pcm "dmixer"
+}
+
+pcm.dmixer {
+   type dmix
+   ipc_key 1024
+   ipc_perm 0666
+   slave {
+     pcm "speakerbonnet"
+     period_time 0
+     period_size 1024
+     buffer_size 8192
+     rate 44100
+     channels 2
+   }
+}
+
+ctl.dmixer {
+  type hw card 0
+}
+```
+
+Which creates a PCM sound device with good default parameters.
+
+Finally, create a new file `/home/pi/.asoundrc`
+```
+pcm.speakerbonnet {
+   type hw card 0
+}
+
+pcm.dmixer {
+   type dmix
+   ipc_key 1024
+   ipc_perm 0666
+   slave {
+     pcm "speakerbonnet"
+     period_time 0
+     period_size 1024
+     buffer_size 8192
+     rate 44100
+     channels 2
+   }
+}
+
+ctl.dmixer {
+    type hw card 0
+}
+
+pcm.softvol {
+    type softvol
+    slave.pcm "dmixer"
+    control.name "PCM"
+    control.card 0
+}
+
+ctl.softvol {
+    type hw card 0
+}
+
+pcm.!default {
+    type             plug
+    slave.pcm       "softvol"
+}
+```
+Reboot in order for your changes to apply. Then, you have to play some sound
+using `alsa`:
+```
+speaker-test -c2 --test=wav -w /usr/share/sounds/alsa/Front_Center.wav
+```
+And then **reboot again**. Also copy this file to `/root/.asoundrc`:
+`sudo cp /home/pi/.asoundrc /root/.asoundrc` and of course **reboot again**.
+
+Then, choose the sound level that you find appropriate for your device using
+`sudo alsamixer`. Our testings suggest that 80% is a good level.
+
+![Alsa Mixer](./img/alsamixer.png)
+
+*Note*: Never underestimate the power of rebooting when playing with sound on
+the Raspberry Pi (and I would say on Linux in general). In our case, it solved
+weird problems a couple of times when we were not quite sure what was going on.
 
 ### Device-specific AWS resources
 
@@ -130,4 +224,4 @@ Finally install the `systemd` service on the Raspberry Pi:
 make install-raspberry-pi-service
 ```
 
-Which
+Which install the `systemd` service associated with the Talko-Lingo software (`rx` and `tx`, which respectively receive and send the audio to the backend).
