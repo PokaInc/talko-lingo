@@ -148,7 +148,7 @@ def handle_transcribe_event(event):
 
 
 def translate(text_to_translate, destination_bucket_name, job_id):
-    publish_status('Translating', job_id=job_id)
+    publish_status('Translating', job_id=job_id, TextToTranslate=text_to_translate)
 
     input_lang, output_lang = extract_input_output_lang_from_job_id(job_id)
 
@@ -173,7 +173,7 @@ def translate(text_to_translate, destination_bucket_name, job_id):
 
 
 def create_polly_job(text, bucketname, job_id):
-    publish_status('Pollying', job_id=job_id)
+    publish_status('Pollying', job_id=job_id, TextToPolly=text)
 
     _, output_lang = extract_input_output_lang_from_job_id(job_id)
 
@@ -196,11 +196,12 @@ def create_polly_job(text, bucketname, job_id):
     ))
 
 
-def publish_status(status, job_id):
+def publish_status(status, job_id, **data):
     iot = boto3.client('iot-data')
     iot.publish(topic='talko/job_status', payload=json.dumps({
         'JobId': job_id,
         'Status': status,
+        'Data': data or None,
     }))
 
 
