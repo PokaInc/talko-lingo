@@ -67,8 +67,10 @@ Begin by screwing underneath the bottom shell so that screws that align with the
 
 ![WithPi](./img/withpi.jpg "With Pi")
 
-Finally, you can put the soldered Speaker Bonnet on the GPIO pins, and cross your fingers that everything works as expected :-) Jump to the [RaspberryPi Setup]() in order to test the components and proceed with the software part of the project!
+Finally, you can put the soldered Speaker Bonnet on the GPIO pins, and cross your fingers that everything works as expected :-) In theory, here the RaspberryPi should have been setup; If it wasn't, go-on a follow the [Raspberry Pi Setup](README_RASPBERRY_PI.md) instructions!
 
 ![WithBonnet](./img/withbonnet.jpg "With Pi")
 
 Rinse and repeat to make the second Talko-Lingo device in order to start making new friends from all around the world!
+
+![Test](../3d-printing/bottom_shell.stl "Test")

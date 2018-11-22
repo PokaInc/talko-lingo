@@ -85,3 +85,5 @@ The final result should look like something similar to this:
 ![Final result](./img/final.jpg "Final result")
 
 On the left part, you have the resulting piece of hardware that has just been soldered. But in order to protect our newly soldered wiring, the right side of the picture shows how we used hot glue to isolate and harden a bit our setup.
+
+Proceed to the [next step](README_3D_PRINTING.md) to handle the 3D-printing part of the Talko-Lingo project.

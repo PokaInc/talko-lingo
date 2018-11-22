@@ -14,16 +14,15 @@ user's voice, transcribe it, translate it to the target language and then
 finally convert the translated text to speech. Built-in display mechanisms
 provide visual feedback of the translation process.
 
+### Project setup
 
-### Local macOS development
+In order to complete your own Talko-Lingo Walkie-Talkie, we did put together
+a step-by-step tutorial to get you going. Note that these are only suggestions
+and we encourage you to make you own version of these.
 
-#### Installation
-```
-xcode-select --install
-brew install portaudio
-pip install -r requirements.txt
-pip install -r requirements_dev.txt
+1. [Cloud resources Setup](README_CLOUD_RESOURCES.md)
+2. [Raspberry Pi Software Setup](README_RASPBERRY_PI.md)
+3. [Raspberry Pi Hardware Setup](README_HARDWARE.md)
+4. [Case 3D Printing](README_3D_PRINTING.md)
 
-export RECORDING_DEVICE_NAME='Built-in Microphone'
-export AUDIO_FILE_STORE=talkolingo-audiofilestore-10log5mrxrr34
-```
+If all is going well, you should have a fully-functional Walkie-Talkie setup! As a bonus, you can tweak it to work over WiFi and communicate over hundreds of kilometers :-)
