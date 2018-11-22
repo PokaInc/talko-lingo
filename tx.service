@@ -2,6 +2,7 @@
  After=multi-user.target
 
  [Service]
+ User=pi
  EnvironmentFile=/home/pi/talko-lingo/.config/environment
  WorkingDirectory=/home/pi/talko-lingo/src/local/
  ExecStart=/usr/bin/python -m tx.tx
