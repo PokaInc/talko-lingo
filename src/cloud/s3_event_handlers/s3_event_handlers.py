@@ -4,6 +4,7 @@ import uuid
 
 import boto3
 from google.cloud import speech
+from google.cloud import texttospeech
 from google.cloud.speech import enums
 from google.cloud.speech import types
 
@@ -88,7 +89,6 @@ def handle_new_audio_file(bucketname, key):
             print(response)
 
     else:
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'service_account.json'
         client = speech.SpeechClient()
 
         content = boto3.client('s3').get_object(Bucket=bucketname, Key=key)['Body'].read()
@@ -170,31 +170,62 @@ def translate(text_to_translate, destination_bucket_name, job_id):
         translated_text = text_to_translate
         print('Same input/output language, not translating')
 
-    create_polly_job(translated_text, destination_bucket_name, job_id=job_id)
+    text_to_speech(translated_text, destination_bucket_name, job_id=job_id)
 
 
-def create_polly_job(text, bucketname, job_id):
+def text_to_speech(text, bucketname, job_id):
+    pipeline_config = get_pipeline_config()
+
     publish_status('Pollying', job_id=job_id, TextToPolly=text)
 
     _, output_lang = extract_input_output_lang_from_job_id(job_id)
 
-    voices = {
-        'fr-CA': 'Chantal',
-        'en-AU': 'Nicole',
-        'en-US': 'Joanna',
-        'en-GB': 'Emma',
-        'es-US': 'Penelope',
-    }
+    text_to_speech_mode = pipeline_config.get('TextToSpeechMode', 'aws')
+    if text_to_speech_mode == 'aws':
+        voices = {
+            'fr-CA': 'Chantal',
+            'en-AU': 'Nicole',
+            'en-US': 'Joanna',
+            'en-GB': 'Emma',
+            'es-US': 'Penelope',
+        }
 
-    polly_client = boto3.client('polly')
-    print(polly_client.start_speech_synthesis_task(
-        OutputFormat='mp3',
-        OutputS3BucketName=bucketname,
-        OutputS3KeyPrefix='output/{}/'.format(job_id),
-        Text=text,
-        VoiceId=voices[output_lang],
-        LanguageCode=output_lang
-    ))
+        polly_client = boto3.client('polly')
+        print(polly_client.start_speech_synthesis_task(
+            OutputFormat='mp3',
+            OutputS3BucketName=bucketname,
+            OutputS3KeyPrefix='output/{}/'.format(job_id),
+            Text=text,
+            VoiceId=voices[output_lang],
+            LanguageCode=output_lang
+        ))
+    else:
+        client = texttospeech.TextToSpeechClient()
+        synthesis_input = texttospeech.types.SynthesisInput(text=text)
+
+        voice = texttospeech.types.VoiceSelectionParams(
+            language_code=output_lang,
+            ssml_gender=texttospeech.enums.SsmlVoiceGender.FEMALE,
+        )
+
+        audio_config = texttospeech.types.AudioConfig(
+            audio_encoding=texttospeech.enums.AudioEncoding.MP3,
+        )
+
+        response = client.synthesize_speech(synthesis_input, voice, audio_config)
+
+        s3 = boto3.resource('s3')
+        key = 'output/{}/{}.mp3'.format(job_id, str(uuid.uuid4()))
+        s3object = s3.Object(bucketname, key)
+        s3object.put(Body=response.audio_content)
+        publish_status('Publishing', job_id=job_id)
+        iot_client = boto3.client('iot-data')
+        print(iot_client.publish(
+            topic='talko/rx/' + extract_output_device_from_job_id(job_id),
+            payload=json.dumps({
+                'AudioFileUrl': build_presigned_url(boto3.client('s3'), bucketname, key)
+            }).encode('utf-8')
+        ))
 
 
 def publish_status(status, job_id, **data):
