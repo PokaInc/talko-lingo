@@ -96,7 +96,7 @@ Resources:
             Action:
             - iot:Publish
             Resource:
-            - !Sub "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/talko/rx"
+            - !Sub "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/talko/rx/*"
             - !Sub "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/talko/job_status"
       - PolicyName: LambdaAccess
         PolicyDocument:
@@ -334,12 +334,26 @@ Resources:
           Action: s3:GetObject
           Resource: !Sub 'arn:aws:s3:::${WebUiBucket}/*'
 
+  Thing:
+    Type: AWS::IoT::Thing
+
 Outputs:
+  AudioFileStore:
+    Value: !Ref AudioFileStore
+
+  AudioFileStoreArn:
+    Value: !GetAtt AudioFileStore.Arn
+    Export:
+      Name: AudioFileStoreArn
+
   RxLambda:
     Value: !GetAtt LocalLambdas.Outputs.RxLambda
 
   TxLambda:
     Value: !GetAtt LocalLambdas.Outputs.TxLambda
+
+  ThingName:
+    Value: !Ref Thing
 
   WebsiteURL:
     Value: !GetAtt WebUiBucket.WebsiteURL
