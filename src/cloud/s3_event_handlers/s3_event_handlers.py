@@ -105,11 +105,15 @@ def handle_new_audio_file(bucketname, key):
         )
 
         response = client.recognize(config, audio)
+
         print(response)
-        text_to_translate = response.results[0].alternatives[0].transcript
-        publish_status('Translating', job_id=job_id, TextToTranslate=text_to_translate)
-        translated_text = translate(text_to_translate, job_id)
-        text_to_speech(translated_text, bucketname, job_id=job_id)
+        if response.results:
+            text_to_translate = response.results[0].alternatives[0].transcript
+            publish_status('Translating', job_id=job_id, TextToTranslate=text_to_translate)
+            translated_text = translate(text_to_translate, job_id)
+            text_to_speech(translated_text, bucketname, job_id=job_id)
+        else:
+            publish_status('Error', job_id=job_id, ErrorCause='speech-to-text')
 
 
 def build_presigned_url(s3_client, bucketname, key):
