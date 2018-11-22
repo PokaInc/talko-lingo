@@ -10,7 +10,7 @@ from physical_inputs import PhysicalInterface
 from shared.display import Display
 
 DEVICE_ID = os.environ['DEVICE_ID']
-RECORDING_DEVICE_NAME = os.environ['RECORDING_DEVICE_NAME']
+RECORDING_DEVICE_NAME = os.environ.get('RECORDING_DEVICE_NAME', 'USB PnP Sound Device')
 BUCKET_NAME = os.environ['AUDIO_FILE_STORE']
 current_language_code = 'en'
 

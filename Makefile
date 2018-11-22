@@ -65,3 +65,7 @@ deploy-website: package-website
 
 update-website:
 	@aws s3 sync website/ s3://www.$(DOMAIN_NAME) --exclude "*/.DS_Store"
+
+install-raspberry-pi-service:
+	@sudo systemctl enable tx.service
+	@sudo systemctl start tx.service
