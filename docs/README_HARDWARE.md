@@ -82,7 +82,7 @@ Note that the choice of pin is arbitraty, but you **cannot choose the pins 19 or
 
 The final result should look like something similar to this:
 
-![Final result](./img/final.jpg "Final result")
+![Final result](./img/final.JPG "Final result")
 
 On the left part, you have the resulting piece of hardware that has just been soldered. But in order to protect our newly soldered wiring, the right side of the picture shows how we used hot glue to isolate and harden a bit our setup.
 
