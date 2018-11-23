@@ -19,6 +19,7 @@ dependencies {
     )
     // https://mvnrepository.com/artifact/io.reactivex.rxjava2/rxjava
     compile group: 'io.reactivex.rxjava2', name: 'rxjava', version: '2.2.2'
+    compile group: 'commons-io', name: 'commons-io', version: '2.6'
 }
 
 // Task for building the zip file for upload

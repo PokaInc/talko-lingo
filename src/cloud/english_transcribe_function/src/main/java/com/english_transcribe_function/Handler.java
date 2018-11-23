@@ -8,6 +8,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
@@ -22,9 +23,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.transcribestreaming.TranscribeStreamingAsyncClient;
 import software.amazon.awssdk.services.transcribestreaming.model.*;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
+import java.io.*;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -60,7 +59,7 @@ public class Handler {
                 /**
                  * Request parameters. Refer to API document for details.
                  */
-                getRequest(16_000),
+                getRequest(44_100),
                     new AudioStreamPublisher(getStreamFromS3Object(s3ObjectInfo)),
                 /**
                  * Subscriber of real-time transcript stream.
@@ -84,7 +83,17 @@ public class Handler {
                 .build();
         S3Object fullObject = s3Client.getObject(new GetObjectRequest(s3ObjectInfo.getBucketName(), s3ObjectInfo.getObjectKey()));
 
-        return fullObject.getObjectContent();
+        InputStream objectContent = fullObject.getObjectContent();
+
+        try {
+            File targetFile = File.createTempFile("talko-lingo", ".wav", new File("/tmp"));
+            FileUtils.copyInputStreamToFile(objectContent, targetFile);
+            return new FileInputStream(targetFile);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static StartStreamTranscriptionRequest getRequest(Integer mediaSampleRateHertz) {
