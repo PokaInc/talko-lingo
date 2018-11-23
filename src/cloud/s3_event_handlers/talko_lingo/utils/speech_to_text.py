@@ -23,6 +23,8 @@ class AwsSpeechToText(object):
 
             text = response['Payload'].read().decode('utf-8')
             print('Text:', text)
+            if text == "null":
+                text = None
             return text, False
         else:
             transcribe_client = boto3.client('transcribe')
