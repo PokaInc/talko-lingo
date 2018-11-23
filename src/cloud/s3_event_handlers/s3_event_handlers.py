@@ -45,7 +45,7 @@ def handle_input_file(s3object):
     if text_to_translate is not None and async is False:
         on_speech_to_text_done(text_to_translate, output_bucket=boto3.resource('s3').Bucket(s3object.bucket_name),
                                job_id=job_id)
-    elif text_to_translate is None:
+    elif text_to_translate is None and async is False:
         publish_status('Error', job_id=job_id, ErrorCause='speech-to-text')
 
 
