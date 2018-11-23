@@ -17,7 +17,7 @@ body, html {
     background-color: black;
 }
 
-.transcribing.colored {
+.speech-to-text.colored {
     background-color: #5EBE92;
 }
 
@@ -25,7 +25,7 @@ body, html {
     background-color: #54A983;
 }
 
-.pollying.colored {
+.text-to-speech.colored {
     background-color: #4B9775;
 }
 

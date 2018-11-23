@@ -73,15 +73,15 @@ const onMessage = (topic, message) => {
   console.log(message);
   let status = message.Status;
   console.log(status);
-  if (status === 'Transcribing') {
+  if (status === 'SpeechToText') {
     let row = getOrCreateRow(message.JobId);
-    activateColumn(row, 'transcribing');
+    activateColumn(row, 'speech-to-text');
   } else if (status === 'Translating') {
     let row = getOrCreateRow(message.JobId);
-    activateColumn(row, 'translating', "\"" + message.Data.TextToTranslate + "\"");
-  } else if (status === 'Pollying') {
+    activateColumn(row, 'translating', "\"" + message.Data.Text + "\"");
+  } else if (status === 'TextToSpeech') {
     let row = getOrCreateRow(message.JobId);
-    activateColumn(row, 'pollying', "\"" + message.Data.TextToPolly + "\"");
+    activateColumn(row, 'text-to-speech', "\"" + message.Data.Text + "\"");
   } else if (status === 'Publishing') {
     let row = getOrCreateRow(message.JobId);
     activateColumn(row, 'publishing');
@@ -152,14 +152,14 @@ const addRow = (rowId) => {
   let div = document.createElement('div');
   div.classList.add('row');
   div.id = rowId;
-  div.innerHTML = '  <div class="transcribing col progress-bar">\n' +
-    '  Transcribing\n' +
+  div.innerHTML = '  <div class="speech-to-text col progress-bar">\n' +
+    '  Speech to Text\n' +
     '  </div>\n' +
     '  <div class="translating col progress-bar">\n' +
     '  Translating\n' +
     '  </div>\n' +
-    '  <div class="pollying col progress-bar">\n' +
-    '  Pollying\n' +
+    '  <div class="text-to-speech col progress-bar">\n' +
+    '  Text to Speech\n' +
     '  </div>\n' +
     '  <div class="publishing col progress-bar">\n' +
     '  Publishing\n' +

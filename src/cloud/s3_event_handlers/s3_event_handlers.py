@@ -25,13 +25,12 @@ def lambda_handler(event, _):
                 key = s3_message['object']['key']
 
                 if key.startswith('input/'):
-                    handle_new_audio_file(bucketname, key)
+                    handle_input_file(bucketname, key)
                 if key.startswith('output/'):
-                    job_id = key.partition('output/')[2].partition('/')[0]
-                    handle_polly_generated_file(bucketname, key, job_id=job_id)
+                    handle_output_file(bucketname, key)
 
 
-def handle_new_audio_file(bucketname, key):
+def handle_input_file(bucketname, key):
     input_device_id = key.rpartition('/')[0].rpartition('/')[2]
     output_device_id = 'device_b' if input_device_id == 'device_a' else 'device_a'
 
@@ -43,24 +42,25 @@ def handle_new_audio_file(bucketname, key):
 
     input_s3object = boto3.resource('s3').Object(bucketname, key)
 
-    publish_status('Transcribing', job_id=job_id)
+    publish_status('SpeechToText', job_id=job_id)
     text_to_translate, async = speech_to_text(input_s3object, input_lang, job_id)
 
     if text_to_translate is not None and async is False:
-        on_transcribing_done(text_to_translate, output_bucket=boto3.resource('s3').Bucket(bucketname), job_id=job_id)
+        on_speech_to_text_done(text_to_translate, output_bucket=boto3.resource('s3').Bucket(bucketname), job_id=job_id)
     elif text_to_translate is None:
         publish_status('Error', job_id=job_id, ErrorCause='speech-to-text')
 
 
-def on_transcribing_done(text_to_translate, output_bucket, job_id):
-    publish_status('Translating', job_id=job_id, TextToTranslate=text_to_translate)
+def on_speech_to_text_done(text_to_translate, output_bucket, job_id):
+    publish_status('Translating', job_id=job_id, Text=text_to_translate)
     translated_text = translate(text_to_translate, job_id=job_id)
 
-    publish_status('Pollying', job_id=job_id, TextToPolly=translated_text)
+    publish_status('TextToSpeech', job_id=job_id, Text=translated_text)
     text_to_speech(translated_text, output_bucket=output_bucket, job_id=job_id)
 
 
-def handle_polly_generated_file(bucketname, key, job_id):
+def handle_output_file(bucketname, key):
+    job_id = key.partition('output/')[2].partition('/')[0]
     publish_status('Publishing', job_id=job_id)
     iot_client = boto3.client('iot-data')
     presigned_url = boto3.client('s3').generate_presigned_url(
@@ -96,5 +96,5 @@ def handle_transcribe_event(event):
 
     content = json.loads(boto3.client('s3').get_object(Bucket=bucketname, Key=key)['Body'].read())
     text_to_translate = content['results']['transcripts'][0]['transcript']
-    on_transcribing_done(text_to_translate=text_to_translate, output_bucket=boto3.resource('s3').Bucket(bucketname),
-                         job_id=job_id)
+    on_speech_to_text_done(text_to_translate=text_to_translate, output_bucket=boto3.resource('s3').Bucket(bucketname),
+                           job_id=job_id)
