@@ -1,5 +1,5 @@
 # Talko-Lingo
-A demonstration project for the re:Invent Builder's Fair
+A demonstration project for the re:Invent Builder's Fair 2018
 
 ## Abstract
 
