@@ -33,7 +33,10 @@ class AwsSpeechToText(object):
                 LanguageCode=input_lang,
                 MediaFormat=os.path.splitext(input_s3object.key)[1][1:],
                 Media={
-                    'MediaFileUri': 'https://s3.amazonaws.com/{}/{}'.format(bucketname, key)
+                    'MediaFileUri': 'https://s3.amazonaws.com/{}/{}'.format(
+                        input_s3object.bucket_name,
+                        input_s3object.key,
+                    )
                 },
                 OutputBucketName=input_s3object.bucket_name
             )
