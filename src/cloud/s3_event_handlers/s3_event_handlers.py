@@ -25,13 +25,12 @@ def lambda_handler(event, _):
                 key = s3_message['object']['key']
 
                 if key.startswith('input/'):
-                    handle_new_audio_file(bucketname, key)
+                    handle_input_file(bucketname, key)
                 if key.startswith('output/'):
-                    job_id = key.partition('output/')[2].partition('/')[0]
-                    handle_polly_generated_file(bucketname, key, job_id=job_id)
+                    handle_output_file(bucketname, key)
 
 
-def handle_new_audio_file(bucketname, key):
+def handle_input_file(bucketname, key):
     input_device_id = key.rpartition('/')[0].rpartition('/')[2]
     output_device_id = 'device_b' if input_device_id == 'device_a' else 'device_a'
 
@@ -60,7 +59,8 @@ def on_speech_to_text_done(text_to_translate, output_bucket, job_id):
     text_to_speech(translated_text, output_bucket=output_bucket, job_id=job_id)
 
 
-def handle_polly_generated_file(bucketname, key, job_id):
+def handle_output_file(bucketname, key):
+    job_id = key.partition('output/')[2].partition('/')[0]
     publish_status('Publishing', job_id=job_id)
     iot_client = boto3.client('iot-data')
     presigned_url = boto3.client('s3').generate_presigned_url(
