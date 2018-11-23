@@ -63,7 +63,7 @@ class GcpSpeechToText(object):
 
 def speech_to_text(input_s3object, input_lang, job_id):
     pipeline_config = get_pipeline_config()
-    transcribe_mode = pipeline_config.get('TranscribeMode', 'aws')
-    speech_to_text_class = AwsSpeechToText if transcribe_mode == 'aws' else GcpSpeechToText
+    speech_to_text_mode = pipeline_config.get('SpeechToTextMode', 'aws')
+    speech_to_text_class = AwsSpeechToText if speech_to_text_mode == 'aws' else GcpSpeechToText
     text, async = speech_to_text_class().run(input_s3object=input_s3object, input_lang=input_lang, job_id=job_id)
     return text, async
