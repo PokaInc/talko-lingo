@@ -6,7 +6,7 @@ import soundfile
 
 FORMAT = pyaudio.paInt16  # 16-bit resolution
 CHANNEL = 1  # 1 channel
-SAMPLE_RATE = 16000  # 44.1kHz sampling rate
+SAMPLE_RATE = 44100  # 44.1kHz sampling rate
 CHUNK_SIZE = 16384  # 2^14 samples for buffer
 
 
