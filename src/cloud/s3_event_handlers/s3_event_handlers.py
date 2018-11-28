@@ -37,6 +37,28 @@ def handle_input_file(s3object):
     input_lang = device_languages[input_device_id]
     output_lang = device_languages[output_device_id]
 
+    cloudwatch = boto3.client('cloudwatch')
+    cloudwatch.put_metric_data(
+        Namespace='talko-lingo/s3eventhandlers',
+        MetricData=[
+            {
+                'MetricName': 'InputFilesProcessed',
+                'Value': 1,
+                'Dimensions': [
+                    {
+                        'Name': 'InputLang',
+                        'Value': input_lang,
+                    },
+                    {
+                        'Name': 'OutputLang',
+                        'Value': output_lang,
+                    },
+                ],
+                'Unit': 'Count',
+            },
+        ]
+    )
+
     job_id = build_job_id(input_device_id, input_lang, output_device_id, output_lang)
 
     publish_status('SpeechToText', job_id=job_id)

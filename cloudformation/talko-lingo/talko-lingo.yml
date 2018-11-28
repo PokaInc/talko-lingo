@@ -117,6 +117,15 @@ Resources:
             Resource:
             - !GetAtt DeviceConfigTable.Arn
             - !GetAtt PipelineConfigTable.Arn
+      - PolicyName: MetricsPolicy
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - cloudwatch:PutMetricData
+            Resource:
+            - '*'
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
