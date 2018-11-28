@@ -44,6 +44,7 @@ Resources:
       Code: ../../src/cloud/s3_event_handlers/
       Runtime: python3.6
       Timeout: '300'
+      MemorySize: 3008
       Environment:
         Variables:
           ENGLISH_TRANSCRIBE_STREAMING_LAMBDA_FUNCTION_NAME: "EnglishTranscribeLambdaFunction"
@@ -226,7 +227,7 @@ Resources:
       Code: ../../src/cloud/english_transcribe_function/build/distributions/english_transcribe_function.zip
       Runtime: java8
       Timeout: '300'
-      MemorySize: 1024
+      MemorySize: 3008
       Environment:
         Variables:
           OVERRIDE_AWS_ACCESS_KEY_ID: !Ref TranscribeStreamingAccessKey
