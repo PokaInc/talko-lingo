@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
-    "aws-iot-device-sdk": "^2.2.1"
+    "aws-iot-device-sdk": "^2.2.1",
+    "browserify": "^16.2.3"
   },
   "devDependencies": {},
   "scripts": {
